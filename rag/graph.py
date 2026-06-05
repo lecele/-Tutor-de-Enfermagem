@@ -559,9 +559,10 @@ def decide_after_grading(
 
     Esta é a decisão central do CRAG: a correção acontece aqui.
     """
-    has_relevant = bool(state.get("documents"))
-
-    route = "generate" if has_relevant else "fallback_response"
+    # Sempre roteia para "generate" para permitir que o LLM responda de forma amigável a dúvidas
+    # de navegação, conversa geral ou forneça opções quando não houver material no RAG.
+    # O LLM é instruído no prompt a dar o fallback padrão caso seja uma pergunta técnica vazia.
+    route = "generate"
     logger.info("crag_routing_decision", route=route, relevant_docs=len(state.get("documents", [])))
 
     return route
