@@ -2,7 +2,9 @@
 
 import { ChatRequest, ChatResponse } from '@/types/chat';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+// Em produção (Vercel), usa as API Routes do próprio Next.js via URL relativa.
+// Em desenvolvimento local, pode apontar para o backend Python se NEXT_PUBLIC_API_URL estiver definido.
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 
 /**
  * Envia uma mensagem para o tutor de IA.

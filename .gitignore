@@ -9,12 +9,11 @@ out/
 build/
 dist/
 
-# Environment variables (NEVER commit these)
+# Environment variables — NUNCA commitar estes arquivos!
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.local.example
+!.env.*.example
 
 # Debug logs
 npm-debug.log*
