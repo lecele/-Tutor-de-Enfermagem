@@ -1,77 +1,58 @@
-/* app/globals.css — Estilos globais e animações customizadas */
-
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* ── Animação dos blobs de fundo ─────────────────────────────────────────── */
+/* ── Scrollbar azul fina ─────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1573C280; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #1573C2bb; }
+
+/* ── Animação blob ───────────────────────────────────────────────────────── */
 @keyframes float {
-  0%, 100% {
-    transform: translateY(0px) scale(1);
-  }
-  50% {
-    transform: translateY(-20px) scale(1.03);
-  }
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(-18px) scale(1.02); }
 }
 
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 15px rgba(14, 165, 233, 0.2), inset 0 0 15px rgba(14, 165, 233, 0.1);
-  }
-  50% {
-    box-shadow: 0 0 25px rgba(14, 165, 233, 0.45), inset 0 0 20px rgba(14, 165, 233, 0.2);
-  }
-}
-
-/* ── Scrollbar customizada escura e celeste ─────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-
-::-webkit-scrollbar-track {
-  background: #02080f;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #0ea5e933;
-  border-radius: 999px;
-  border: 1px solid rgba(14, 165, 233, 0.1);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #0ea5e977;
-  border: 1px solid rgba(14, 165, 233, 0.3);
-}
-
-/* ── Prose customizations para react-markdown ──────────────────────────────── */
-.prose :where(p):not(:where([class~="not-prose"] *)) {
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
-}
-
-.prose :where(ul > li):not(:where([class~="not-prose"] *)) {
-  padding-left: 0;
-}
-
-/* ── Transições suaves globais ─────────────────────────────────────────────── */
+/* ── Transições globais suaves ───────────────────────────────────────────── */
 * {
-  transition-property: color, background-color, border-color, box-shadow;
+  transition-property: color, background-color, border-color, box-shadow, opacity;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
 
-/* Não aplicar transition em animações e transforms do Framer Motion */
-[data-framer-motion], .framer-motion-applied {
-  transition: none !important;
+/* Prose customization */
+.prose :where(p):not(:where([class~="not-prose"] *)) {
+  margin-top: 0.4em;
+  margin-bottom: 0.4em;
+}
+.prose :where(ul > li):not(:where([class~="not-prose"] *)) {
+  padding-left: 0;
 }
 
-/* ── Seleção de texto ──────────────────────────────────────────────────────── */
+/* Seleção de texto */
 ::selection {
-  background-color: rgba(14, 165, 233, 0.3);
+  background-color: rgba(21, 115, 194, 0.3);
   color: #ffffff;
+}
+
+/* Material Symbols */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
 }

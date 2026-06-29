@@ -1,10 +1,10 @@
 'use client';
 
-// components/chat/MessageInput.tsx — Barra de digitação premium de alto contraste (SaaS/Healthtech style)
+// components/chat/MessageInput.tsx — Input pill estilo InterAtiva, azul
 
 import { useState, useRef, useCallback, KeyboardEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowUp, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 interface MessageInputProps {
   onSend: (message: string) => void;
@@ -22,15 +22,11 @@ export function MessageInput({ onSend, isLoading, disabled }: MessageInputProps)
     if (!canSend) return;
     onSend(value.trim());
     setValue('');
-    // Reseta altura do textarea
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-    }
+    if (textareaRef.current) textareaRef.current.style.height = 'auto';
   }, [canSend, onSend, value]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
-      // Enter envia por padrão, Shift+Enter pula linha
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         handleSend();
@@ -39,7 +35,6 @@ export function MessageInput({ onSend, isLoading, disabled }: MessageInputProps)
     [handleSend]
   );
 
-  // Auto-resize do textarea (máx 6 linhas)
   const handleInput = useCallback(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -48,88 +43,65 @@ export function MessageInput({ onSend, isLoading, disabled }: MessageInputProps)
   }, []);
 
   return (
-    <div className="w-full">
-      {/* Container do Input com glassmorphism escuro e glow celeste */}
-      <motion.div
-        className="relative w-full bg-[#0b334c] border border-sky-500/30 shadow-[0_4px_20px_rgba(0,0,0,0.3)] rounded-2xl p-2 pl-4 flex items-end gap-2 transition-all focus-within:border-sky-400/70 focus-within:shadow-[0_0_0_3px_rgba(14,165,233,0.2)]"
-        initial={{ y: 10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      >
-        {/* Textarea que cresce */}
+    <form
+      id="chat-form"
+      className="relative group w-full"
+      onSubmit={(e) => { e.preventDefault(); handleSend(); }}
+    >
+      {/* Pill container — igual ao InterAtiva */}
+      <div className="
+        flex items-center gap-2
+        bg-[#1573C2] dark:bg-[#0D3A6E]
+        rounded-[2rem] p-1 md:p-2 pl-4 md:pl-8
+        shadow-[0_10px_20px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_20px_rgba(0,0,0,0.4)]
+        focus-within:shadow-[0_0_20px_rgba(21,115,194,0.3)]
+        transition-all
+        border border-transparent focus-within:border-blue-400/50
+      ">
+        {/* Input / Textarea */}
         <textarea
           ref={textareaRef}
           rows={1}
           value={value}
-          onChange={(e) => {
-            setValue(e.target.value);
-            handleInput();
-          }}
+          onChange={(e) => { setValue(e.target.value); handleInput(); }}
           onKeyDown={handleKeyDown}
           disabled={isLoading || disabled}
           placeholder="Faça uma pergunta sobre enfermagem..."
-          className="flex-1 resize-none bg-transparent py-2.5 text-[13.5px] leading-relaxed text-slate-100 placeholder:text-sky-200/50 focus:outline-none disabled:opacity-50"
+          className="
+            w-full bg-transparent border-none focus:outline-none
+            text-white placeholder-white/70 dark:placeholder-white/50
+            font-medium text-base
+            py-2.5 md:py-3 resize-none disabled:opacity-50
+          "
           style={{ maxHeight: '144px' }}
+          autoComplete="off"
         />
 
-        {/* Botão de envio com degradê celeste e ícone escuro */}
-        <div className="flex-shrink-0">
-          <SendButton canSend={canSend} isLoading={isLoading} onSend={handleSend} />
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
-// ── Botão de Envio com presença visual e contraste ──────────────────────────
-
-function SendButton({
-  canSend,
-  isLoading,
-  onSend,
-}: {
-  canSend: boolean;
-  isLoading: boolean;
-  onSend: () => void;
-}) {
-  return (
-    <motion.button
-      onClick={onSend}
-      disabled={!canSend}
-      className={`
-        relative flex h-9 w-9 items-center justify-center rounded-xl
-        transition-all duration-300 cursor-pointer
-        ${
-          canSend
-            ? 'bg-gradient-to-r from-[#0ea5e9] to-[#38bdf8] text-slate-950 shadow-md shadow-sky-500/25 border border-sky-400/20 hover:brightness-110'
-            : 'bg-[#04090f] text-slate-600 border border-white/5 cursor-not-allowed'
-        }
-      `}
-      whileHover={canSend ? { scale: 1.04 } : {}}
-      whileTap={canSend ? { scale: 0.96 } : {}}
-      title="Enviar pergunta"
-    >
-      <AnimatePresence mode="wait">
-        {isLoading ? (
-          <motion.div
-            key="loading"
-            initial={{ opacity: 0, rotate: -90 }}
-            animate={{ opacity: 1, rotate: 0 }}
-            exit={{ opacity: 0 }}
-          >
-            <Loader2 className={`h-4 w-4 animate-spin ${canSend ? 'text-slate-950' : 'text-slate-600'}`} />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="send"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <ArrowUp className={`h-4.5 w-4.5 ${canSend ? 'text-slate-950' : 'text-slate-600'}`} strokeWidth={3} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.button>
+        {/* Botão Enviar */}
+        <button
+          type="submit"
+          disabled={!canSend}
+          className={`
+            flex items-center justify-center
+            w-11 h-11 md:w-14 md:h-14
+            rounded-2xl md:rounded-[1.2rem]
+            shadow-md transition-all active:scale-95 shrink-0
+            border border-white/10 dark:border-blue-300/30
+            ${canSend
+              ? 'bg-[#0d4a87] dark:bg-gradient-to-r dark:from-[#1573C2] dark:to-[#0d4a87] hover:brightness-110 text-white cursor-pointer'
+              : 'bg-[#0d4a87]/60 text-white/40 cursor-not-allowed'
+            }
+          `}
+        >
+          {isLoading ? (
+            <Loader2 className="h-5 w-5 animate-spin text-white" />
+          ) : (
+            <span className="material-symbols-outlined text-[24px] md:text-[28px] select-none">
+              send
+            </span>
+          )}
+        </button>
+      </div>
+    </form>
   );
 }

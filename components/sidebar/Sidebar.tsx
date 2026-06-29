@@ -1,47 +1,94 @@
 'use client';
 
-// components/sidebar/Sidebar.tsx — Painel lateral premium minimalista (Healthtech style)
-
-import { motion } from 'framer-motion';
-import { Plus } from 'lucide-react';
-import { Logo } from './Logo';
+// components/sidebar/Sidebar.tsx — Sidebar estilo InterAtiva, azul médico
 
 interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
   onNewSession: () => void;
 }
 
-export function Sidebar({ onNewSession }: SidebarProps) {
-  return (
-    <motion.aside
-      className="flex h-[calc(100vh-2rem)] w-64 flex-shrink-0 flex-col justify-between border border-sky-400/35 bg-[#0b334c]/95 p-6 m-4 mr-2 rounded-[24px] relative z-20 shadow-2xl backdrop-blur-xl"
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-    >
-      {/* Top Section */}
-      <div className="flex flex-col gap-8">
-        {/* Logo */}
-        <div className="px-2">
-          <Logo />
-        </div>
+const TOPICS = [
+  { label: 'Preparo Pré-operatório',       query: 'Quais os cuidados de enfermagem no preparo pré-operatório?' },
+  { label: 'Posicionamento Cirúrgico',     query: 'Explique os principais posicionamentos cirúrgicos e riscos.' },
+  { label: 'Centro Cirúrgico (CC)',        query: 'Como funciona a estrutura e rotina do centro cirúrgico?' },
+  { label: 'Recuperação Anestésica (SRPA)', query: 'Quais os cuidados de enfermagem na sala de recuperação anestésica?' },
+  { label: 'Cuidados Pós-operatórios',     query: 'Quais as principais complicações no pós-operatório e como prevenir?' },
+  { label: 'Assepsia e Antissepsia',       query: 'Explique os princípios de assepsia e antissepsia no CC.' },
+  { label: 'Infecção Hospitalar',          query: 'Quais os protocolos de prevenção de infecção hospitalar?' },
+  { label: 'Estomias',                     query: 'Quais os cuidados de enfermagem com pacientes estomizados?' },
+  { label: 'Nutrição Perioperatória',      query: 'Quais as recomendações de nutrição no perioperatório?' },
+  { label: 'Cirurgia Segura',              query: 'O que é o protocolo de cirurgia segura da OMS?' },
+];
 
-        {/* Action Button: Nova Conversa (Botão degradê celeste tecnológico) */}
-        <motion.button
-          onClick={onNewSession}
-          className="flex w-full items-center justify-start gap-2.5 rounded-xl bg-gradient-to-r from-[#0ea5e9] via-[#38bdf8] to-[#60a5fa] text-[#02080f] px-4 py-2.5 transition-all font-black text-[13px] tracking-wide cursor-pointer hover:shadow-[0_0_20px_rgba(14,165,233,0.45)] relative overflow-hidden"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          {/* Efeito de brilho flutuante no hover */}
-          <span className="absolute top-0 h-full w-[40%] pointer-events-none" style={{
-            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent)'
-          }}></span>
-          <Plus className="h-4 w-4 text-[#02080f]" strokeWidth={3} />
-          Nova Conversa
-        </motion.button>
+export function Sidebar({ isOpen, onClose, onNewSession }: SidebarProps) {
+  const fire = (query: string) => {
+    window.dispatchEvent(new CustomEvent('suggestion-click', { detail: query }));
+    onClose();
+  };
+
+  return (
+    <aside
+      className={`
+        fixed md:static top-0 left-0
+        w-[85vw] max-w-[320px] md:w-[19rem]
+        m-0 md:my-6 md:ml-6 md:mr-1
+        h-full md:h-[calc(100vh-3rem)]
+        rounded-none md:rounded-[2rem]
+        bg-[#eaf3fc] dark:bg-[#06101e]/95
+        backdrop-blur-xl
+        border-r-2 md:border-2 border-[#1573C2] dark:border-r dark:md:border dark:border-blue-500/30
+        z-50
+        transform transition-all duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-[110%]'} md:translate-x-0
+        flex flex-col
+        shadow-[0_15px_30px_rgba(0,0,0,0.15)] dark:shadow-[0_15px_30px_rgba(0,0,0,0.5)]
+        overflow-hidden
+      `}
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+    >
+      {/* Botão fechar (mobile) */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 md:hidden text-white hover:text-white transition-colors z-50 bg-[#1060a5] dark:bg-[#0a2040] p-1.5 rounded-full border border-white/20 shadow-sm shrink-0"
+      >
+        <span className="material-symbols-outlined text-[18px]">close</span>
+      </button>
+
+      {/* Header - Centralizado */}
+      <div className="w-full flex items-center justify-center gap-2 px-6 pt-12 pb-2 md:pt-8 md:pb-1 shrink-0">
+        <span className="material-symbols-outlined text-[16px] text-[#1573C2] dark:text-blue-300 opacity-90">school</span>
+        <h2 className="text-[#1573C2] dark:text-blue-100 text-[11px] font-bold tracking-[0.15em] uppercase opacity-100 drop-shadow-sm">
+          Tópicos de Estudo
+        </h2>
       </div>
 
-
-    </motion.aside>
+      {/* Lista de tópicos */}
+      <div
+        className="w-full h-full flex-1 overflow-y-auto flex flex-col justify-evenly px-4 py-2 pb-8 md:px-5 md:pb-8 gap-3"
+        style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}
+      >
+        {TOPICS.map((topic) => (
+          <button
+            key={topic.label}
+            onClick={() => fire(topic.query)}
+            className="
+              w-full text-center text-[13px] font-semibold
+              text-white
+              bg-[#1573C2]
+              hover:bg-[#0d4a87]
+              border border-blue-400/30
+              rounded-full px-4 py-2.5
+              shadow-sm transition-all duration-200
+              hover:shadow-md hover:-translate-y-[0.5px]
+              active:scale-[0.98]
+              cursor-pointer
+            "
+          >
+            {topic.label}
+          </button>
+        ))}
+      </div>
+    </aside>
   );
 }

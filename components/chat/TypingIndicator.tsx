@@ -1,49 +1,41 @@
 'use client';
 
-// components/chat/TypingIndicator.tsx — Indicador animado de resposta em andamento
+// components/chat/TypingIndicator.tsx — Indicador de digitação, azul
 
 import { motion } from 'framer-motion';
-import { Bot } from 'lucide-react';
 
 export function TypingIndicator() {
   return (
     <motion.div
       className="flex items-end gap-3"
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 8 }}
-      transition={{ duration: 0.3 }}
+      exit={{ opacity: 0, y: 10 }}
+      transition={{ duration: 0.25 }}
     >
-      {/* Avatar do agente com glow celeste */}
+      {/* Avatar */}
       <div className="relative flex-shrink-0">
-        <div className="absolute inset-0 rounded-full bg-sky-500/20 blur-md scale-125 animate-pulse" />
-        <div className="relative flex h-8 w-8 items-center justify-center rounded-full border border-sky-500/35 bg-[#050c14] shadow-[0_0_15px_rgba(14,165,233,0.4)]">
-          <Bot className="h-4 w-4 text-sky-400" />
+        <div className="absolute inset-0 rounded-full bg-[#1573C2]/20 blur-md scale-125 animate-pulse" />
+        <div className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[#1573C2]/35 bg-white dark:bg-[#05111f] shadow-sm">
+          <span className="material-symbols-outlined text-[18px] text-[#1573C2] dark:text-blue-400">
+            medical_services
+          </span>
         </div>
       </div>
 
-      {/* Balão com dots pulsando - Dark Glassmorphism */}
-      <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-sm border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm">
-        {[0, 1, 2].map((i) => (
-          <motion.div
-            key={i}
-            className="h-2 w-2 rounded-full bg-[#0ea5e9] shadow-[0_0_8px_rgba(14,165,233,0.8)]"
-            animate={{
-              y: [0, -6, 0],
-              opacity: [0.4, 1, 0.4],
-            }}
-            transition={{
-              duration: 0.8,
-              repeat: Infinity,
-              delay: i * 0.15,
-              ease: 'easeInOut',
-            }}
-          />
-        ))}
+      {/* Bubble com três pontinhos */}
+      <div className="rounded-2xl rounded-bl-none border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0d1e35] px-5 py-4 shadow-sm">
+        <div className="flex items-center gap-1.5 h-4">
+          {[0, 1, 2].map((i) => (
+            <motion.span
+              key={i}
+              className="block h-2 w-2 rounded-full bg-[#1573C2]/60 dark:bg-blue-400/60"
+              animate={{ y: [0, -5, 0] }}
+              transition={{ duration: 0.7, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
+            />
+          ))}
+        </div>
       </div>
-
-      {/* Label discreto */}
-      <span className="mb-1 text-[11px] font-medium text-slate-400 font-display">Processando...</span>
     </motion.div>
   );
 }

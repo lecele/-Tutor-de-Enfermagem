@@ -1,7 +1,7 @@
-// app/layout.tsx — Root layout com metadados e fontes
+// app/layout.tsx — Root layout com dark mode, Material Symbols e Inter
 
 import type { Metadata } from 'next';
-import { Inter, Space_Grotesk } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import './globals.css';
 
 const inter = Inter({
@@ -10,35 +10,42 @@ const inter = Inter({
   display: 'swap',
 });
 
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  variable: '--font-space-grotesk',
-  display: 'swap',
-});
-
 export const metadata: Metadata = {
-  title: 'Agents na Saúde — Tutor de Enfermagem',
-  description:
-    'Chatbot educacional de enfermagem com IA (CRAG) para o projeto de Mestrado Agents na Saúde. Respostas precisas baseadas em material acadêmico.',
-  keywords: [
-    'enfermagem',
-    'tutor IA',
-    'RAG',
-    'CRAG',
-    'educação em saúde',
-    'mestrado',
-  ],
-  authors: [{ name: 'Agents na Saúde' }],
-  robots: 'noindex, nofollow', // Projeto acadêmico — não indexar
+  title: 'Tutor de Enfermagem',
+  description: 'Tutor virtual de Enfermagem Perioperatória com IA e base de conhecimento acadêmica.',
+  keywords: ['enfermagem', 'tutor IA', 'perioperatória', 'RAG', 'educação em saúde'],
+  authors: [{ name: 'Agentes na Saúde' }],
+  robots: 'noindex, nofollow',
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+    <html lang="pt-BR" className={`${inter.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Material Symbols Outlined (Google Fonts) — mesmo do InterAtiva */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
+          rel="stylesheet"
+        />
+        {/* Script inline para evitar flashing de tema (carrega a preferência salva antes do React hidratar) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const saved = localStorage.getItem('theme');
+                const isDark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                if (isDark) {
+                  document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+              } catch(e) {}
+            `,
+          }}
+        />
+      </head>
       <body className="font-sans antialiased">{children}</body>
     </html>
   );
