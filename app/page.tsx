@@ -105,23 +105,23 @@ export default function HomePage() {
             {/* Hamburger mobile */}
             <button
               className="md:hidden text-white p-1 rounded-xl hover:bg-white/10 transition-all flex items-center justify-center shrink-0 cursor-pointer"
-              onClick={() => setSidebarOpen(true)}
-              aria-label="Abrir menu"
+              onClick={() => setSidebarOpen(prev => !prev)}
+              aria-label="Abrir/Fechar menu"
             >
-              <span className="material-symbols-outlined text-[24px]">menu</span>
+              <span className="material-symbols-outlined text-[24px]">{sidebarOpen ? 'close' : 'menu'}</span>
             </button>
 
-            {/* Logo / imagem - Ajustada para ficar maior e com escala elegante */}
-            <div className="flex items-center justify-center h-11 sm:h-14 md:h-19 max-w-[95px] sm:max-w-[150px] md:max-w-[220px] shrink-0 overflow-visible">
+            {/* Logo / imagem — tamanho fixo no mobile, sem escala que cause overflow */}
+            <div className="flex items-center justify-center w-9 h-9 sm:w-12 sm:h-12 md:w-[72px] md:h-[72px] shrink-0 overflow-hidden rounded-xl">
               <img
                 src="/logo.png"
                 alt="Logo Tutor"
-                className="h-full w-full object-contain drop-shadow-md transition-all duration-300 scale-135 md:scale-160"
+                className="w-full h-full object-cover drop-shadow-md"
               />
             </div>
 
-            {/* Título - Sólido e sem quebra/corte no mobile */}
-            <h1 className="text-[1.02rem] sm:text-xl md:text-3xl font-bold tracking-wide text-white dark:text-blue-50 whitespace-nowrap min-w-0">
+            {/* Título - Sólido, sem quebra/corte no mobile */}
+            <h1 className="text-[1rem] sm:text-xl md:text-3xl font-bold tracking-wide text-white dark:text-blue-50 whitespace-nowrap overflow-hidden text-ellipsis">
               Tutor de Enfermagem
             </h1>
           </div>
