@@ -1,6 +1,6 @@
 // app/layout.tsx — Root layout com dark mode, Material Symbols e Inter
 
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 
@@ -16,6 +16,13 @@ export const metadata: Metadata = {
   keywords: ['enfermagem', 'tutor IA', 'perioperatória', 'RAG', 'educação em saúde'],
   authors: [{ name: 'Agentes na Saúde' }],
   robots: 'noindex, nofollow',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

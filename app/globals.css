@@ -13,6 +13,15 @@
 ::-webkit-scrollbar-thumb { background: #1573C280; border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: #1573C2bb; }
 
+/* ── Proteção contra transbordo horizontal (mobile) ──────────────────────── */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 /* ── Animação blob ───────────────────────────────────────────────────────── */
 @keyframes float {
   0%, 100% { transform: translateY(0px) scale(1); }

@@ -99,7 +99,7 @@ export default function HomePage() {
           bg-[#1573C2] dark:bg-gradient-to-r dark:from-[#1573C2]/95 dark:to-[#0d4a87]/95
           backdrop-blur-md shrink-0 transition-colors duration-300
         ">
-          <div className="flex items-center gap-2 sm:gap-3 md:gap-5 min-w-0 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 md:gap-5 flex-1 min-w-0">
             {/* Hamburger mobile */}
             <button
               className="md:hidden text-white p-1 rounded-xl hover:bg-white/10 transition-all flex items-center justify-center shrink-0"
@@ -109,17 +109,17 @@ export default function HomePage() {
               <span className="material-symbols-outlined text-[24px]">menu</span>
             </button>
 
-            {/* Logo / imagem - Ajustada para ficar maior e elegante */}
-            <div className="flex items-center justify-center h-13 sm:h-16 md:h-19 max-w-[135px] sm:max-w-[190px] md:max-w-[220px] shrink-0 overflow-visible">
+            {/* Logo / imagem - Compacta no mobile, grande no desktop */}
+            <div className="flex items-center justify-center h-10 sm:h-14 md:h-19 max-w-[80px] sm:max-w-[150px] md:max-w-[220px] shrink-0 overflow-visible">
               <img
                 src="/logo.png"
                 alt="Logo Tutor"
-                className="h-full w-full object-contain drop-shadow-md transition-all duration-300 scale-160"
+                className="h-full w-full object-contain drop-shadow-md transition-all duration-300 scale-110 md:scale-160"
               />
             </div>
 
             {/* Título */}
-            <h1 className="text-[1.05rem] sm:text-xl md:text-3xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-100 truncate">
+            <h1 className="text-[0.95rem] sm:text-xl md:text-3xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-100 truncate">
               Tutor de Enfermagem
             </h1>
           </div>
