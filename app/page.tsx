@@ -57,6 +57,8 @@ export default function HomePage() {
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         onNewSession={startNewSession}
+        toggleTheme={toggleTheme}
+        darkMode={darkMode}
       />
 
       {/* ── Overlay mobile ───────────────────────────────────────────────── */}
@@ -99,36 +101,36 @@ export default function HomePage() {
           bg-[#1573C2] dark:bg-gradient-to-r dark:from-[#1573C2]/95 dark:to-[#0d4a87]/95
           backdrop-blur-md shrink-0 transition-colors duration-300
         ">
-          <div className="flex items-center gap-1.5 sm:gap-3 md:gap-5 flex-1 min-w-0">
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-5 flex-1 min-w-0">
             {/* Hamburger mobile */}
             <button
-              className="md:hidden text-white p-1 rounded-xl hover:bg-white/10 transition-all flex items-center justify-center shrink-0"
+              className="md:hidden text-white p-1 rounded-xl hover:bg-white/10 transition-all flex items-center justify-center shrink-0 cursor-pointer"
               onClick={() => setSidebarOpen(true)}
               aria-label="Abrir menu"
             >
               <span className="material-symbols-outlined text-[24px]">menu</span>
             </button>
 
-            {/* Logo / imagem - Compacta no mobile, grande no desktop */}
-            <div className="flex items-center justify-center h-10 sm:h-14 md:h-19 max-w-[80px] sm:max-w-[150px] md:max-w-[220px] shrink-0 overflow-visible">
+            {/* Logo / imagem - Ajustada para ficar maior e com escala elegante */}
+            <div className="flex items-center justify-center h-11 sm:h-14 md:h-19 max-w-[95px] sm:max-w-[150px] md:max-w-[220px] shrink-0 overflow-visible">
               <img
                 src="/logo.png"
                 alt="Logo Tutor"
-                className="h-full w-full object-contain drop-shadow-md transition-all duration-300 scale-110 md:scale-160"
+                className="h-full w-full object-contain drop-shadow-md transition-all duration-300 scale-135 md:scale-160"
               />
             </div>
 
-            {/* Título */}
-            <h1 className="text-[0.95rem] sm:text-xl md:text-3xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-100 truncate">
+            {/* Título - Sólido e sem quebra/corte no mobile */}
+            <h1 className="text-[1.02rem] sm:text-xl md:text-3xl font-bold tracking-wide text-white dark:text-blue-50 whitespace-nowrap min-w-0">
               Tutor de Enfermagem
             </h1>
           </div>
 
-          {/* Ações */}
-          <div className="flex items-center gap-1 shrink-0">
+          {/* Ações - Apenas visíveis no desktop, ocultas no mobile */}
+          <div className="hidden md:flex items-center gap-1 shrink-0">
             <button
               onClick={startNewSession}
-              className="text-white p-1 md:p-2 rounded-xl md:rounded-2xl border border-transparent hover:bg-white/10 hover:border-white/20 bg-white/5 shadow-sm transition-all flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 md:w-12 md:h-12"
+              className="text-white p-1 md:p-2 rounded-xl md:rounded-2xl border border-transparent hover:bg-white/10 hover:border-white/20 bg-white/5 shadow-sm transition-all flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 md:w-12 md:h-12 cursor-pointer"
               title="Nova Conversa"
             >
               <span className="material-symbols-outlined text-[16px] sm:text-[18px] md:text-[24px]">
@@ -137,7 +139,7 @@ export default function HomePage() {
             </button>
             <button
               onClick={toggleTheme}
-              className="text-white p-1 md:p-2 rounded-xl md:rounded-2xl border border-transparent hover:bg-white/10 hover:border-white/20 bg-white/5 shadow-sm transition-all flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 md:w-12 md:h-12"
+              className="text-white p-1 md:p-2 rounded-xl md:rounded-2xl border border-transparent hover:bg-white/10 hover:border-white/20 bg-white/5 shadow-sm transition-all flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 md:w-12 md:h-12 cursor-pointer"
               title="Alternar Tema"
             >
               <span className="material-symbols-outlined text-[16px] sm:text-[18px] md:text-[24px]">

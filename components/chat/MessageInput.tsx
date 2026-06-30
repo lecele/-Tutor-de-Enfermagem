@@ -66,7 +66,7 @@ export function MessageInput({ onSend, isLoading, disabled }: MessageInputProps)
           onChange={(e) => { setValue(e.target.value); handleInput(); }}
           onKeyDown={handleKeyDown}
           disabled={isLoading || disabled}
-          placeholder="Faça uma pergunta sobre enfermagem..."
+          placeholder="Pergunte ao Tutor..."
           className="
             w-full bg-transparent border-none focus:outline-none
             text-white placeholder-white/70 dark:placeholder-white/50
