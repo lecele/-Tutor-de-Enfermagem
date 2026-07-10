@@ -110,8 +110,13 @@ function AgentBubble({ content, sourcesFound, hasContext }: {
   sourcesFound?: number;
   hasContext?: boolean;
 }) {
-  // Detecta se a mensagem contém o menu principal
-  const isMenuMessage = useMemo(() => content.includes('MENU PRINCIPAL'), [content]);
+  // Detecta se a mensagem contém todas as opções do menu principal
+  const isMenuMessage = useMemo(() => {
+    return content.includes('Resumo de Conteúdo') &&
+           content.includes('Simulado de Prova') &&
+           content.includes('Informações do Curso') &&
+           content.includes('Encerrar Sessão');
+  }, [content]);
 
   // Componentes customizados do ReactMarkdown
   const markdownComponents = useMemo(() => ({

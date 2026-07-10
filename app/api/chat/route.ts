@@ -12,17 +12,17 @@ export const maxDuration = 60;
 // ── Respostas fixas (zero tokens de LLM) ─────────────────────────────────────
 
 const GREETING_RESPONSE =
-  'Olá! Sou o seu **Tutor de Enfermagem Perioperatória**. 🩺\n\n' +
+  'Olá! Sou o seu **Tutor de Enfermagem Perioperatória**.\n\n' +
   'Estou aqui para te ajudar a estudar! Escolha uma das opções abaixo para começarmos:\n\n' +
   '1. **Resumo de Conteúdo**\n' +
   '2. **Simulado de Prova**\n' +
   '3. **Informações do Curso**\n' +
   '4. **Encerrar Sessão**\n\n' +
-  '**Clique diretamente na opção desejada**, ou digite o número ou o nome no chat!';
+  '**Você pode clicar diretamente na opção desejada**, digitar o nome da opção ou simplesmente digitar o número correspondente no chat!';
 
 
 const FAREWELL_RESPONSE =
-  'Sessão encerrada. Bons estudos! Estarei aqui quando precisar. 👋';
+  'Sessão encerrada. Bons estudos! Estarei aqui quando precisar.';
 
 const FALLBACK_RESPONSE =
   'O material de estudo disponível não contém informações suficientes para responder com precisão acadêmica.\n\n' +

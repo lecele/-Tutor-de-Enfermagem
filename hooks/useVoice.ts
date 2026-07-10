@@ -9,7 +9,10 @@ type AnySpeechRecognition = any;
 
 // ── Limpeza de Markdown para TTS ──────────────────────────────────────────────
 function cleanTextForSpeech(text: string): string {
-  return text
+  // Remove emojis para evitar que o leitor de tela fale o nome deles por extenso (ex: "estetoscópio")
+  const textWithoutEmojis = text.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD00-\uDFFF])/g, '');
+
+  return textWithoutEmojis
     .replace(/```[\s\S]*?```/g, '')
     .replace(/`[^`]*`/g, '')
     .replace(/[*_~#>]/g, '')
