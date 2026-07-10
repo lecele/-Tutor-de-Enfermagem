@@ -157,8 +157,9 @@ function AgentBubble({ content, sourcesFound, hasContext }: {
               rounded-xl px-4 py-2.5 my-1
               border border-[#1573C2]/25 dark:border-blue-400/20
               bg-blue-50/60 dark:bg-blue-950/20
-              hover:bg-[#1573C2] dark:hover:bg-[#1573C2]
-              hover:border-[#1573C2] dark:hover:border-[#1573C2]
+              hover:bg-blue-100/90 dark:hover:bg-blue-900/30
+              hover:border-[#1573C2]/45 dark:hover:border-blue-400/40
+              focus:outline-none focus:ring-2 focus:ring-[#1573C2]/15
               transition-all duration-150 cursor-pointer
               shadow-sm hover:shadow-md active:scale-[0.98]
             "
@@ -166,24 +167,20 @@ function AgentBubble({ content, sourcesFound, hasContext }: {
             <span className="
               material-symbols-outlined text-[16px]
               text-[#1573C2] dark:text-blue-400
-              group-hover:text-white
-              transition-colors shrink-0
+              shrink-0
             " style={{ fontVariationSettings: "'FILL' 1" }}>
               touch_app
             </span>
             <span className="
               text-[13.5px] font-semibold
               text-[#1573C2] dark:text-blue-400
-              group-hover:text-white
-              transition-colors
             ">
               {children}
             </span>
             <span className="
               material-symbols-outlined text-[14px] ml-auto
               text-[#1573C2]/40 dark:text-blue-400/40
-              group-hover:text-white/70
-              transition-colors
+              group-hover:translate-x-0.5 transition-transform
             ">
               chevron_right
             </span>
