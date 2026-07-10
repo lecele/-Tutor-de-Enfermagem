@@ -1,6 +1,6 @@
-// app/api/chat/route.ts — CRAG-lite com controle de tokens
-// Otimizações: prompt compacto, histórico curto, chunks truncados,
-// roteamento por intenção (menu/conteúdo), maxOutputTokens controlado.
+// app/api/chat/route.ts — Tutor de Enfermagem
+// Otimizado para alta performance (sem CRAG grader lento) mas mantendo 
+// a qualidade original das respostas (sem truncar contexto, prompt completo).
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
@@ -9,28 +9,28 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-// ── Respostas fixas (zero tokens de LLM) ─────────────────────────────────────
+// ── Respostas fixas (zero tokens de LLM para navegação rápida) ───────────────
 
 const GREETING_RESPONSE =
   'Olá! Sou o seu **Tutor de Enfermagem Perioperatória**.\n\n' +
-  'Estou aqui para te ajudar a estudar! Escolha uma das opções abaixo para começarmos:\n\n' +
+  'Escolha uma das opções abaixo para começarmos:\n\n' +
   '1. **Resumo de Conteúdo**\n' +
   '2. **Simulado de Prova**\n' +
   '3. **Informações do Curso**\n' +
   '4. **Encerrar Sessão**\n\n' +
   '**Você pode clicar diretamente na opção desejada**, digitar o nome da opção ou simplesmente digitar o número correspondente no chat!';
 
-
 const FAREWELL_RESPONSE =
   'Sessão encerrada. Bons estudos! Estarei aqui quando precisar.';
 
 const FALLBACK_RESPONSE =
-  'O material de estudo disponível não contém informações suficientes para responder com precisão acadêmica.\n\n' +
+  'Desculpe, o material de estudo disponível não contém informações suficientes ' +
+  'para responder a sua pergunta com precisão acadêmica.\n\n' +
   'Recomendo consultar:\n' +
-  '- Seu professor ou tutor da disciplina\n' +
-  '- Biblioteca virtual da UFSC\n' +
-  '- **LILACS**, **BVS**, **PubMed**\n' +
-  '- **COFEN** (cofen.gov.br) e **Ministério da Saúde** (saude.gov.br)';
+  '- Seu professor orientador ou tutor da disciplina\n' +
+  '- Biblioteca virtual da instituição\n' +
+  '- Bases de dados científicas: **LILACS**, **BVS**, **PubMed**\n' +
+  '- Publicações do **COFEN** (cofen.gov.br) e **Ministério da Saúde** (saude.gov.br)';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -46,13 +46,12 @@ interface Document {
 }
 
 // ── Roteamento por intenção (sem LLM) ────────────────────────────────────────
-// Detecta mensagens que não precisam de RAG — economiza embedding + Supabase.
 
 const GREETING_TOKENS = new Set([
   'oi', 'ola', 'olá', 'opa', 'bom', 'boa', 'hello', 'hi', 'salve',
-  'tudo', 'bem', 'dia', 'tarde', 'noite', 'como', 'vai', 'menu',
-  'inicio', 'início', 'comecar', 'começar', 'voltar', 'tutor', 'bot',
-  'quem', 'faz', 'pode', 'fazer', 'obrigado', 'obrigada', 'valeu',
+  'tudo', 'bem', 'como', 'vai', 'menu', 'inicio', 'início',
+  'comecar', 'começar', 'voltar', 'tutor', 'bot', 'quem', 'faz',
+  'pode', 'fazer', 'obrigado', 'obrigada', 'valeu',
 ]);
 
 const FAREWELL_TOKENS = new Set([
@@ -73,35 +72,33 @@ function detectIntent(text: string): 'greeting' | 'farewell' | 'content' {
   // Adeus / encerrar sessão
   if (words.length <= 3 && words.some((w) => FAREWELL_TOKENS.has(w))) return 'farewell';
 
-  // Saudação / menu / navegação
+  // Saudação / menu / navegação inicial (não intercepta opções do menu)
   if (words.length <= 4 && words.some((w) => GREETING_TOKENS.has(w))) return 'greeting';
 
   return 'content';
 }
 
-// ── Helpers de formatação (compactos para economizar tokens) ─────────────────
+// ── Helpers de formatação RAG (Restaurado qualidade máxima) ───────────────────
 
-// Trunca cada chunk a 900 chars e exibe no máximo 3 chunks
+// Não trunca os chunks e formata com clareza
 function formatContext(docs: Document[]): string {
   if (!docs.length) return 'Nenhum material disponível.';
   return docs
-    .slice(0, 3)
     .map((d, i) =>
-      `[${i + 1}] ${d.source} (sim:${d.similarity.toFixed(2)})\n${d.content.slice(0, 900)}`
+      `[${i + 1}] **Arquivo:** ${d.source} (similaridade: ${d.similarity.toFixed(2)})\n${d.content}`
     )
     .join('\n\n---\n\n');
 }
 
-// Últimas 3 trocas (6 mensagens) — suficiente para contexto conversacional
+// Histórico de 12 mensagens (6 trocas) para o LLM manter o contexto perfeitamente
 function formatHistory(history: Array<{ role: string; content: string }>): string {
   if (!history.length) return '';
   return history
-    .slice(-6)
-    .map((h) => `${h.role === 'user' ? 'Estudante' : 'Tutor'}: ${h.content.slice(0, 400)}`)
+    .map((h) => `**${h.role === 'user' ? 'Estudante' : 'Tutor'}:** ${h.content}`)
     .join('\n');
 }
 
-// ── Clientes lazy (um por cold start) ────────────────────────────────────────
+// ── Clientes lazy ────────────────────────────────────────────────────────────
 
 let _supabase: ReturnType<typeof createClient> | null = null;
 let _genai: GoogleGenerativeAI | null = null;
@@ -126,14 +123,14 @@ async function embedQuery(text: string): Promise<number[]> {
   return result.embedding.values;
 }
 
-// ── Retrieval ─────────────────────────────────────────────────────────────────
+// ── Retrieval (Restaurado: match_count=5 e threshold=0.45 para cobertura total) 
 
-async function retrieveDocs(embedding: number[], threshold = 0.50, count = 3): Promise<Document[]> {
+async function retrieveDocs(embedding: number[]): Promise<Document[]> {
   const supabase = getSupabase();
   const { data, error } = await (supabase.rpc as any)('match_documents', {
     query_embedding: embedding,
-    match_threshold: parseFloat(process.env.RAG_MATCH_THRESHOLD || String(threshold)),
-    match_count: parseInt(process.env.RAG_MATCH_COUNT || String(count)),
+    match_threshold: parseFloat(process.env.RAG_MATCH_THRESHOLD || '0.45'),
+    match_count: parseInt(process.env.RAG_MATCH_COUNT || '5'),
   });
   if (error) { console.error('[retrieve]', error); return []; }
   return (data || []).map((r: Record<string, unknown>) => ({
@@ -143,27 +140,81 @@ async function retrieveDocs(embedding: number[], threshold = 0.50, count = 3): P
   }));
 }
 
-// ── System Prompt compacto ────────────────────────────────────────────────────
-// Reduzido de ~1.800 para ~700 tokens mantendo todas as regras comportamentais.
+// ── System Prompt Completo (Restaurado Prompt Mestre) ────────────────────────
 
 function buildSystemPrompt(context: string, historyText: string): string {
-  return `Você é o Tutor de Enfermagem Perioperatória — IA educacional que apoia estudantes de graduação. Você NÃO fornece respostas prontas para avaliações ou provas.
+  return `Você é o **Tutor de Enfermagem**, um Assistente de Inteligência Artificial Generativa Educacional especializado em Enfermagem Perioperatória.
+Seu propósito é apoiar estudantes de graduação em enfermagem da Universidade Federal de Santa Catarina (UFSC), promovendo a aprendizagem personalizada, o pensamento crítico e a autonomia intelectual. Você não substitui o raciocínio do estudante e NUNCA fornece respostas prontas para avaliações, trabalhos ou provas.
 
-REGRAS:
-- Linguagem acadêmica, técnica, clara, motivadora.
-- Cite os materiais fornecidos como [1], [2].
-- NUNCA substitua o raciocínio do estudante.
+Siga rigorosamente as seguintes diretrizes extraídas do PROMPT MESTRE do curso:
 
-MENU PRINCIPAL (apresente quando o aluno iniciar, pedir menu ou voltar):
-1. Resumo de Conteúdo → pergunte o tema, forneça resumo com exemplos clínicos + 3 perguntas socráticas UMA POR VEZ.
-2. Simulado de Prova → 5 questões (3 múltipla escolha + 2 discursivas), sem gabarito imediato. Se errar: socrático guiado; após 3 tentativas: forneça a resposta.
-3. Informações do Curso → tire dúvidas sobre calendário, plano de ensino, critérios de avaliação.
-4. Encerrar Sessão → responda exatamente: "Sessão encerrada. Bons estudos!"
+### 1. PRINCÍPIOS ÉTICOS OBRIGATÓRIOS:
+- **UNESCO:** Centralidade humana; equidade, inclusão e acessibilidade; transparência; privacidade; segurança e bem-estar; promoção do pensamento crítico; uso pedagógico responsável; evitar dependência excessiva e garantir integridade acadêmica.
+- **MEC:** Atuar como apoio, não substituto; evitar plágio e respostas prontas para avaliações.
 
-FALLBACK: Se os Materiais de Estudo estiverem vazios ou insuficientes para uma pergunta técnica, use a mensagem de fallback padrão. NÃO use fallback para saudações, menu ou navegação.
+### 2. ESTILO DE COMUNICAÇÃO:
+- Linguagem acadêmica, técnica e adequada à área da saúde, com clareza e rigor conceitual.
+- Tom motivador, respeitoso e estimulador.
+- Indique fontes confiáveis usando citações dos materiais fornecidos [1], [2], etc.
+- Use analogias, metáforas, exemplos reais e hipotéticos para enriquecer as explicações.
 
-## Materiais de Estudo:
-${context}${historyText ? `\n\n## Conversa recente:\n${historyText}` : ''}`;
+### 3. COMPORTAMENTO E FLUXOS DE MENU:
+Sempre que o estudante interagir, guie a conversa de acordo com o fluxo abaixo:
+
+- **MENU PRINCIPAL:**
+  Se o aluno iniciar a sessão, pedir o menu ou se o contexto indicar retorno, apresente exatamente:
+  "### MENU PRINCIPAL
+  Escolha uma das opções:
+  1. **Resumo de Conteúdo**
+  2. **Simulado de Prova**
+  3. **Informações do Curso**
+  4. **Encerrar Sessão**
+  Digite o número ou o nome da opção desejada!"
+
+- **Opção 1: Resumo de Conteúdo**
+  1. Solicitação de Tema: Pergunte: "Qual tema da Enfermagem Perioperatória você deseja estudar?"
+  2. Refinamento: Se o tema for amplo, ajude a especificar.
+  3. Estrutura do Resumo: O resumo deve conter obrigatoriamente:
+     - Explicação detalhada (usando os Materiais de Estudo Disponíveis)
+     - Exemplos clínicos contextualizados
+     - Relação com práticas de enfermagem perioperatória
+     - Referências confiáveis
+     - **Três perguntas socráticas personalizadas, feitas UMA DE CADA VEZ** (aguarde a resposta do aluno antes de fazer a próxima).
+     - Sugestões de estudo complementar.
+  4. Encerramento: Após as 3 perguntas, pergunte: "Deseja aprofundar este tema, escolher outro tema ou voltar ao menu principal?"
+
+- **Opção 2: Simulado de Prova**
+  1. Solicitação de Tema: Pergunte: "Qual tema você deseja para o simulado?"
+  2. Refinamento: Se for amplo, ajude a delimitar.
+  3. Geração: Crie um bloco de **5 questões por vez** (3 de múltipla escolha e 2 discursivas curtas), de níveis variados de dificuldade, **sem fornecer o gabarito de imediato**.
+  4. Correção: Para cada resposta do aluno:
+     - Se correta: confirme e reforce o conceito.
+     - Se incorreta: NÃO forneça a resposta. Aplique questionamento socrático guiado para conduzir o estudante à resposta correta. Se após 3 tentativas ele não acertar, forneça a resposta correta e explique.
+  5. Encerramento: Após as 5 questões, pergunte: "Deseja continuar o simulado, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"
+
+- **Opção 3: Informações do Curso**
+  Responda a dúvidas sobre conteúdo programático, calendário, trabalhos, critérios de avaliação e FAQs (usando a base de conhecimentos quando aplicável, como o Plano de Ensino).
+  Após responder, pergunte: "Deseja fazer outra pergunta ou voltar ao menu principal?"
+
+- **Opção 4: Encerrar Sessão**
+  Responda exatamente: "Sessão encerrada. Bons estudos! Estarei aqui quando precisar."
+
+### 4. REGRAS DE RETRIEVAL E FALLBACK (RAG):
+- Para qualquer pergunta técnica ou teórica, consulte os **Materiais de Estudo Disponíveis** abaixo.
+- Se o material de estudo retornado estiver vazio ou for insuficiente para responder à pergunta com precisão acadêmica, você DEVE usar EXATAMENTE a mensagem padrão de fallback (e nada mais):
+  "Desculpe, o material de estudo disponível não contém informações suficientes para responder a sua pergunta com precisão acadêmica.
+
+  Recomendo consultar:
+  - Seu professor orientador ou tutor da disciplina
+  - Biblioteca virtual da instituição
+  - Bases de dados científicas: **LILACS**, **BVS**, **PubMed**
+  - Publicações do **COFEN** (cofen.gov.br) e **Ministério da Saúde** (saude.gov.br)"
+- **ATENÇÃO:** Nunca use a resposta de fallback para mensagens de navegação do menu, saudações, escolhas de opções ou interações de conversa geral.
+
+## Materiais de Estudo Disponíveis:
+${context}
+
+${historyText ? `## Histórico da Conversa:\n${historyText}` : ''}`;
 }
 
 // ── Geração de resposta ───────────────────────────────────────────────────────
@@ -176,8 +227,7 @@ async function generateResponse(
   const model = getGenAI().getGenerativeModel({
     model: 'gemini-2.5-flash',
     generationConfig: {
-      temperature: 0.2,
-      maxOutputTokens: 1024, // cap: evita respostas longas desnecessárias
+      temperature: 0.2, // Mantém respostas consistentes e fiéis ao contexto
     },
   });
 
@@ -199,7 +249,7 @@ async function getSessionHistory(sessionId: string): Promise<Array<{ role: strin
       .select('role, content')
       .eq('session_id', sessionId)
       .order('created_at', { ascending: true })
-      .limit(6); // 3 trocas — suficiente, economiza tokens
+      .limit(12); // Recupera 12 mensagens (6 trocas) para o modelo saber o contexto da conversa
     return data || [];
   } catch { return []; }
 }
@@ -229,7 +279,7 @@ export async function POST(req: NextRequest) {
     const question = message.trim();
     const intent = detectIntent(question);
 
-    // ── Rota rápida: saudação/menu → zero tokens de LLM ──────────────────────
+    // ── Rota rápida: saudação/menu inicial → zero tokens de LLM ──────────────────
     if (intent === 'greeting') {
       saveMessages(session_id, question, GREETING_RESPONSE); // fire-and-forget
       return NextResponse.json({
@@ -241,7 +291,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ── Rota rápida: encerrar sessão → zero tokens ────────────────────────────
+    // ── Rota rápida: encerrar sessão → zero tokens de LLM ───────────────────────
     if (intent === 'farewell') {
       saveMessages(session_id, question, FAREWELL_RESPONSE);
       return NextResponse.json({
@@ -253,9 +303,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ── Rota de conteúdo: RAG + LLM ──────────────────────────────────────────
+    // ── Rota de conteúdo: RAG completo + Prompt Mestre do Gemini ──────────────
 
-    // Embedding + histórico em paralelo
     let history: Array<{ role: string; content: string }> = [];
     let embedding!: number[];
 
@@ -268,17 +317,23 @@ export async function POST(req: NextRequest) {
       console.error('[init]', e);
       try { embedding = await embedQuery(question); } catch {
         saveMessages(session_id, question, FALLBACK_RESPONSE);
-        return NextResponse.json({ answer: FALLBACK_RESPONSE, sources_found: 0, has_context: false, chat_history_length: 0, processing_time_ms: Date.now() - startTime });
+        return NextResponse.json({
+          answer: FALLBACK_RESPONSE,
+          sources_found: 0,
+          has_context: false,
+          chat_history_length: 0,
+          processing_time_ms: Date.now() - startTime
+        });
       }
     }
 
-    // Retrieval (3 chunks, threshold 0.50)
-    const docs = await retrieveDocs(embedding, 0.50, 3);
+    // Recupera documentos com os parâmetros originais de alta qualidade
+    const docs = await retrieveDocs(embedding);
 
-    // Gerar resposta
+    // Gera a resposta com o prompt completo e sem cortes artificiais
     const answer = await generateResponse(question, docs, history);
 
-    // Salvar em background (não bloqueia resposta)
+    // Salva histórico em background
     saveMessages(session_id, question, answer);
 
     return NextResponse.json({
