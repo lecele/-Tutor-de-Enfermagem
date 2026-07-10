@@ -110,23 +110,40 @@ function AgentBubble({ content, sourcesFound, hasContext }: {
   sourcesFound?: number;
   hasContext?: boolean;
 }) {
-  // Detecta se a mensagem contém todas as opções do menu principal
-  const isMenuMessage = useMemo(() => {
-    return content.includes('Resumo de Conteúdo') &&
-           content.includes('Simulado de Prova') &&
-           content.includes('Informações do Curso') &&
-           content.includes('Encerrar Sessão');
+  // Detecta se a mensagem contém opções interativas para o usuário escolher
+  const isOptionMessage = useMemo(() => {
+    const lower = content.toLowerCase();
+    return (
+      (lower.includes('resumo de conteúdo') && lower.includes('simulado de prova')) ||
+      lower.includes('perguntar sobre:') ||
+      lower.includes('pergunte sobre:') ||
+      lower.includes('escolha uma das') ||
+      lower.includes('sugestões de estudo:') ||
+      lower.includes('sugestões de temas:') ||
+      lower.includes('deseja aprofundar') ||
+      lower.includes('deseja continuar') ||
+      lower.includes('voltar ao menu principal')
+    );
   }, [content]);
 
   // Componentes customizados do ReactMarkdown
   const markdownComponents = useMemo(() => ({
-    // Renderiza itens de lista ordenada como botões quando é o menu
+    // Renderiza itens de lista como botões quando são opções
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     li: ({ children, ...props }: any) => {
-      if (!isMenuMessage) return <li {...props}>{children}</li>;
+      if (!isOptionMessage) return <li {...props}>{children}</li>;
 
       const label = extractText(children).trim();
       if (!label) return <li {...props}>{children}</li>;
+
+      // Itens informativos como "Ou qualquer outra dúvida..." não viram botões
+      if (label.toLowerCase().startsWith('ou ')) {
+        return (
+          <li className="list-none !pl-2 !ml-0 text-slate-400 dark:text-slate-500 text-xs italic mt-2">
+            {children}
+          </li>
+        );
+      }
 
       return (
         <li className="list-none !pl-0 !ml-0">
@@ -172,13 +189,18 @@ function AgentBubble({ content, sourcesFound, hasContext }: {
         </li>
       );
     },
-    // Remove bullets da ol quando é menu (os botões já têm seu layout)
+    // Remove bullets da ol/ul quando são opções
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ol: ({ children, ...props }: any) => {
-      if (!isMenuMessage) return <ol {...props}>{children}</ol>;
+      if (!isOptionMessage) return <ol {...props}>{children}</ol>;
       return <ol className="!list-none !pl-0 !ml-0 flex flex-col gap-0.5 mt-1">{children}</ol>;
     },
-  }), [isMenuMessage]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ul: ({ children, ...props }: any) => {
+      if (!isOptionMessage) return <ul {...props}>{children}</ul>;
+      return <ul className="!list-none !pl-0 !ml-0 flex flex-col gap-0.5 mt-1">{children}</ul>;
+    },
+  }), [isOptionMessage]);
 
   return (
     <div className="rounded-2xl rounded-bl-none border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0d1e35] px-5 py-4 shadow-sm">
