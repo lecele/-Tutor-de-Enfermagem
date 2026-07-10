@@ -145,7 +145,7 @@ export default function HomePage() {
           bg-[#1573C2] dark:bg-gradient-to-r dark:from-[#1573C2]/95 dark:to-[#0d4a87]/95
           backdrop-blur-md shrink-0 transition-colors duration-300
         ">
-          <div className="flex items-center gap-2 sm:gap-3 md:gap-5 flex-1 min-w-0">
+          <div className="flex items-center gap-2 sm:gap-4 md:gap-5 flex-1 min-w-0">
             {/* Hamburger mobile */}
             <button
               className="md:hidden text-white p-1 rounded-xl hover:bg-white/10 transition-all flex items-center justify-center shrink-0 cursor-pointer"
@@ -155,24 +155,13 @@ export default function HomePage() {
               <span className="material-symbols-outlined text-[24px]">{sidebarOpen ? 'close' : 'menu'}</span>
             </button>
 
-            {/* Botão mudo (mobile) — ao lado do hamburger */}
-            <button
-              className="md:hidden text-white p-1 rounded-xl hover:bg-white/10 transition-all flex items-center justify-center shrink-0 cursor-pointer"
-              onClick={toggleMute}
-              title={isMuted ? 'Ativar áudio' : 'Silenciar'}
-            >
-              <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: isMuted ? "'FILL' 1" : "'FILL' 0" }}>
-                {isMuted ? 'volume_off' : 'volume_up'}
-              </span>
-            </button>
-
             {/* Logo — tamanho maior com margens negativas para não crescer a barra */}
-            <div className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-[100px] md:h-[100px] shrink-0 -my-2 md:-my-5 overflow-visible rounded-2xl">
+            <div className="flex items-center justify-center w-16 h-16 sm:w-[76px] sm:h-[76px] md:w-[110px] md:h-[110px] shrink-0 -my-3 sm:-my-4 md:-my-6 overflow-visible rounded-2xl">
               <img src="/logo.png" alt="Logo Tutor" className="w-full h-full object-contain drop-shadow-lg" />
             </div>
 
-            {/* Título */}
-            <h1 className="text-[1rem] sm:text-xl md:text-3xl font-bold tracking-wide text-white dark:text-blue-50 whitespace-nowrap overflow-hidden text-ellipsis">
+            {/* Título — tamanho ajustado para caber por inteiro no celular sem corte */}
+            <h1 className="text-sm min-[360px]:text-base sm:text-xl md:text-3xl font-bold tracking-wide text-white dark:text-blue-50 whitespace-nowrap overflow-visible">
               Tutor de Enfermagem
             </h1>
           </div>
@@ -185,18 +174,6 @@ export default function HomePage() {
               title="Nova Conversa"
             >
               <span className="material-symbols-outlined text-[16px] sm:text-[18px] md:text-[24px]">cleaning_services</span>
-            </button>
-            {/* Botão mudo desktop */}
-            <button
-              onClick={toggleMute}
-              className={`text-white p-1 md:p-2 rounded-xl md:rounded-2xl border border-transparent hover:bg-white/10 hover:border-white/20 shadow-sm transition-all flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 md:w-12 md:h-12 cursor-pointer ${
-                isMuted ? 'bg-red-500/30 border-red-400/30' : 'bg-white/5'
-              }`}
-              title={isMuted ? 'Ativar áudio' : 'Silenciar respostas'}
-            >
-              <span className="material-symbols-outlined text-[16px] sm:text-[18px] md:text-[24px]" style={{ fontVariationSettings: isMuted ? "'FILL' 1" : "'FILL' 0" }}>
-                {isMuted ? 'volume_off' : 'volume_up'}
-              </span>
             </button>
             <button
               onClick={toggleTheme}
@@ -252,7 +229,9 @@ export default function HomePage() {
             disabled={isBackendOnline === false}
             isListening={isListening}
             isSpeaking={isSpeaking}
+            isMuted={isMuted}
             onMicClick={toggleListening}
+            onMuteClick={toggleMute}
             onStopSpeaking={stopSpeaking}
           />
         </footer>

@@ -60,7 +60,7 @@ export function useVoice(onTranscript: (text: string) => void) {
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(cleaned);
       utterance.lang = 'pt-BR';
-      utterance.rate = 1.05;
+      utterance.rate = 0.92; // Fala mais calma e natural, especialmente para mobile
       utterance.pitch = 1.0;
 
       const voices = window.speechSynthesis.getVoices();

@@ -12,7 +12,9 @@ interface MessageInputProps {
   disabled?: boolean;
   isListening?: boolean;
   isSpeaking?: boolean;
+  isMuted?: boolean;
   onMicClick?: () => void;
+  onMuteClick?: () => void;
   onStopSpeaking?: () => void;
 }
 
@@ -22,7 +24,9 @@ export function MessageInput({
   disabled,
   isListening = false,
   isSpeaking = false,
+  isMuted = false,
   onMicClick,
+  onMuteClick,
   onStopSpeaking,
 }: MessageInputProps) {
   const [value, setValue] = useState('');
@@ -110,6 +114,30 @@ export function MessageInput({
               volume_off
             </span>
           </motion.button>
+        )}
+
+        {/* Botão de Mudo/Sons */}
+        {onMuteClick && (
+          <button
+            type="button"
+            onClick={onMuteClick}
+            title={isMuted ? 'Ativar áudio' : 'Silenciar áudio'}
+            className={`
+              flex items-center justify-center
+              w-10 h-10 md:w-11 md:h-11
+              rounded-2xl shrink-0 cursor-pointer
+              shadow-md transition-all active:scale-95
+              border border-white/10
+              ${isMuted
+                ? 'bg-red-500/35 hover:bg-red-500/50 text-red-200'
+                : 'bg-white/15 hover:bg-white/25 text-white'
+              }
+            `}
+          >
+            <span className="material-symbols-outlined text-[20px] md:text-[22px] select-none text-white" style={{ fontVariationSettings: isMuted ? "'FILL' 1" : "'FILL' 0" }}>
+              {isMuted ? 'volume_off' : 'volume_up'}
+            </span>
+          </button>
         )}
 
         {/* Botão de Microfone */}
