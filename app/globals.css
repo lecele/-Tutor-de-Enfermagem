@@ -65,3 +65,24 @@ html, body {
   -webkit-font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
 }
+
+/* ── Moldura em Degradê da Logo (Azul, Verde, Amarelo/Lima) ────────────────── */
+.tutor-gradient-border {
+  position: relative;
+  border: none !important;
+}
+.tutor-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2.5px; /* Espessura da moldura */
+  background: linear-gradient(135deg, #1573C2 0%, #0da58e 50%, #a3e635 100%);
+  -webkit-mask: 
+     linear-gradient(#fff 0 0) content-box, 
+     linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+  z-index: 10;
+}

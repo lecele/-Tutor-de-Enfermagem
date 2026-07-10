@@ -39,7 +39,7 @@ export function Sidebar({ isOpen, onClose, onNewSession, toggleTheme, darkMode }
         rounded-none md:rounded-[2rem]
         bg-[#eaf3fc] dark:bg-[#06101e]/95
         backdrop-blur-xl
-        border-r-2 md:border-2 border-[#1573C2] dark:border-r dark:md:border dark:border-blue-500/30
+        tutor-gradient-border
         z-50
         transform transition-all duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-[110%]'} md:translate-x-0
