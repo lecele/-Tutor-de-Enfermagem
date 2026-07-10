@@ -176,14 +176,34 @@ export default function HomePage() {
           <div className="hidden md:flex items-center gap-1 shrink-0">
             <button
               onClick={startNewSession}
-              className="text-white p-1 md:p-2 rounded-xl md:rounded-2xl border border-transparent hover:bg-white/10 hover:border-white/20 bg-white/5 shadow-sm transition-all flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 md:w-12 md:h-12 cursor-pointer"
+              className="
+                text-white p-1 md:p-2 rounded-xl md:rounded-2xl 
+                tutor-gradient-border shadow-sm transition-all 
+                flex items-center justify-center 
+                w-7 h-7 sm:w-8 sm:h-8 md:w-12 md:h-12 
+                cursor-pointer
+                [--tutor-border-bg:#105ba3]
+                hover:[--tutor-border-bg:#0d4a87]
+                dark:[--tutor-border-bg:#0d3a6e]
+                dark:hover:[--tutor-border-bg:#0a2a50]
+              "
               title="Nova Conversa"
             >
               <span className="material-symbols-outlined text-[16px] sm:text-[18px] md:text-[24px]">cleaning_services</span>
             </button>
             <button
               onClick={toggleTheme}
-              className="text-white p-1 md:p-2 rounded-xl md:rounded-2xl border border-transparent hover:bg-white/10 hover:border-white/20 bg-white/5 shadow-sm transition-all flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 md:w-12 md:h-12 cursor-pointer"
+              className="
+                text-white p-1 md:p-2 rounded-xl md:rounded-2xl 
+                tutor-gradient-border shadow-sm transition-all 
+                flex items-center justify-center 
+                w-7 h-7 sm:w-8 sm:h-8 md:w-12 md:h-12 
+                cursor-pointer
+                [--tutor-border-bg:#105ba3]
+                hover:[--tutor-border-bg:#0d4a87]
+                dark:[--tutor-border-bg:#0d3a6e]
+                dark:hover:[--tutor-border-bg:#0a2a50]
+              "
               title="Alternar Tema"
             >
               <span className="material-symbols-outlined text-[16px] sm:text-[18px] md:text-[24px]">

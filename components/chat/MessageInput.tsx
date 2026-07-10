@@ -140,10 +140,10 @@ export function MessageInput({
               w-10 h-10 md:w-11 md:h-11
               rounded-2xl shrink-0 cursor-pointer
               shadow-md transition-all active:scale-95
-              border border-white/10
+              tutor-gradient-border
               ${isMuted
-                ? 'bg-red-500/35 hover:bg-red-500/50 text-red-200'
-                : 'bg-white/15 hover:bg-white/25 text-white'
+                ? '[--tutor-border-bg:#b91c1c] hover:[--tutor-border-bg:#991b1b] text-red-200'
+                : '[--tutor-border-bg:#105ba3] hover:[--tutor-border-bg:#0d4a87] dark:[--tutor-border-bg:#0d3a6e] dark:hover:[--tutor-border-bg:#0a2a50] text-white'
               }
             `}
           >
@@ -165,11 +165,11 @@ export function MessageInput({
               w-10 h-10 md:w-11 md:h-11
               rounded-2xl shrink-0 cursor-pointer
               shadow-md transition-all active:scale-95
-              border border-white/10
               disabled:opacity-40 disabled:cursor-not-allowed
+              tutor-gradient-border
               ${isListening
-                ? 'bg-red-500 hover:bg-red-600 animate-pulse'
-                : 'bg-white/15 hover:bg-white/25 text-white'
+                ? '[--tutor-border-bg:#ef4444] hover:[--tutor-border-bg:#dc2626] animate-pulse text-white'
+                : '[--tutor-border-bg:#105ba3] hover:[--tutor-border-bg:#0d4a87] dark:[--tutor-border-bg:#0d3a6e] dark:hover:[--tutor-border-bg:#0a2a50] text-white'
               }
             `}
           >
@@ -191,10 +191,10 @@ export function MessageInput({
             w-11 h-11 md:w-14 md:h-14
             rounded-2xl md:rounded-[1.2rem]
             shadow-md transition-all active:scale-95 shrink-0
-            border border-white/10 dark:border-blue-300/30
+            tutor-gradient-border
             ${canSend
-              ? 'bg-[#0d4a87] dark:bg-gradient-to-r dark:from-[#1573C2] dark:to-[#0d4a87] hover:brightness-110 text-white cursor-pointer'
-              : 'bg-[#0d4a87]/60 text-white/40 cursor-not-allowed'
+              ? 'text-white cursor-pointer [--tutor-border-bg:#0d4a87] hover:[--tutor-border-bg:#0a3a6b]'
+              : 'text-white/40 cursor-not-allowed [--tutor-border-bg:#0d4a87] opacity-50'
             }
           `}
         >
