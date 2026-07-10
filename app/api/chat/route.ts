@@ -12,9 +12,8 @@ export const maxDuration = 60;
 // ── Respostas fixas (zero tokens de LLM) ─────────────────────────────────────
 
 const GREETING_RESPONSE =
-  'Olá! Sou o **Tutor de Enfermagem Perioperatória** da UFSC. 🩺\n\n' +
-  '### MENU PRINCIPAL\n' +
-  'Escolha uma das opções abaixo para começarmos:\n\n' +
+  'Olá! Sou o seu **Tutor de Enfermagem Perioperatória**. 🩺\n\n' +
+  'Estou aqui para te ajudar a estudar! Escolha uma das opções abaixo para começarmos:\n\n' +
   '1. **Resumo de Conteúdo**\n' +
   '2. **Simulado de Prova**\n' +
   '3. **Informações do Curso**\n' +
@@ -76,9 +75,6 @@ function detectIntent(text: string): 'greeting' | 'farewell' | 'content' {
 
   // Saudação / menu / navegação
   if (words.length <= 4 && words.some((w) => GREETING_TOKENS.has(w))) return 'greeting';
-
-  // Opções do menu por número ou texto
-  if (/^[123]$/.test(norm) || /^(resumo|simulado|informa|curso)/.test(norm)) return 'greeting';
 
   return 'content';
 }
@@ -151,7 +147,7 @@ async function retrieveDocs(embedding: number[], threshold = 0.50, count = 3): P
 // Reduzido de ~1.800 para ~700 tokens mantendo todas as regras comportamentais.
 
 function buildSystemPrompt(context: string, historyText: string): string {
-  return `Você é o Tutor de Enfermagem Perioperatória da UFSC — IA educacional que apoia estudantes de graduação. Você NÃO fornece respostas prontas para avaliações ou provas.
+  return `Você é o Tutor de Enfermagem Perioperatória — IA educacional que apoia estudantes de graduação. Você NÃO fornece respostas prontas para avaliações ou provas.
 
 REGRAS:
 - Linguagem acadêmica, técnica, clara, motivadora.
