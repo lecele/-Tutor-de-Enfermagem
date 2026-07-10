@@ -37,7 +37,6 @@ export function Sidebar({ isOpen, onClose, onNewSession, toggleTheme, darkMode }
         m-0 md:my-6 md:ml-6 md:mr-1
         h-full md:h-[calc(100vh-3rem)]
         rounded-none md:rounded-[2rem]
-        bg-[#eaf3fc] dark:bg-[#06101e]/95
         backdrop-blur-xl
         tutor-gradient-border
         z-50
@@ -47,7 +46,10 @@ export function Sidebar({ isOpen, onClose, onNewSession, toggleTheme, darkMode }
         shadow-[0_15px_30px_rgba(0,0,0,0.15)] dark:shadow-[0_15px_30px_rgba(0,0,0,0.5)]
         overflow-hidden
       `}
-      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      style={{ 
+        paddingTop: 'env(safe-area-inset-top)',
+        '--tutor-border-bg': darkMode ? '#06101e' : '#eaf3fc'
+      } as React.CSSProperties}
     >
       {/* Botão fechar (mobile) */}
       <button
@@ -74,14 +76,14 @@ export function Sidebar({ isOpen, onClose, onNewSession, toggleTheme, darkMode }
             className="
               w-full text-center text-[13px] font-semibold
               text-white
-              bg-[#1573C2]
-              hover:bg-[#0d4a87]
               tutor-gradient-border
               rounded-full px-4 py-2 md:py-2.5
               shadow-sm transition-all duration-200
               hover:shadow-md hover:-translate-y-[0.5px]
               active:scale-[0.98]
               cursor-pointer
+              [--tutor-border-bg:#1573C2]
+              hover:[--tutor-border-bg:#0d4a87]
             "
           >
             {topic.label}

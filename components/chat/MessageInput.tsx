@@ -79,12 +79,13 @@ export function MessageInput({
       {/* Pill container */}
       <div className="
         flex items-center gap-2
-        bg-[#1573C2] dark:bg-[#0D3A6E]
         rounded-[2rem] p-1 md:p-2 pl-4 md:pl-6
         shadow-[0_10px_20px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_20px_rgba(0,0,0,0.4)]
         focus-within:shadow-[0_0_20px_rgba(21,115,194,0.3)]
         transition-all
         tutor-gradient-border
+        [--tutor-border-bg:#1573C2]
+        dark:[--tutor-border-bg:#0D3A6E]
       ">
         {/* Input / Textarea */}
         <textarea

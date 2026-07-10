@@ -32,10 +32,16 @@ export function ChatContainer({
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="flex flex-1 flex-col tutor-gradient-border bg-white m-4 ml-2 h-[calc(100vh-2rem)] rounded-[24px] overflow-hidden shadow-2xl relative z-10">
+    <div 
+      className="flex flex-1 flex-col tutor-gradient-border m-4 ml-2 h-[calc(100vh-2rem)] rounded-[24px] overflow-hidden shadow-2xl relative z-10"
+      style={{ '--tutor-border-bg': '#ffffff' } as React.CSSProperties}
+    >
       {/* Top Header (Floating Premium, rounded and using cyan/blue gradient) */}
       <div className="p-4 pb-2">
-        <div className="flex items-center justify-between px-6 py-4 rounded-2xl bg-gradient-to-r from-[#0ea5e9] via-[#38bdf8] to-[#60a5fa] shadow-[0_8px_30px_rgba(14,165,233,0.25)] tutor-gradient-border">
+        <div 
+          className="flex items-center justify-between px-6 py-4 rounded-2xl shadow-[0_8px_30px_rgba(14,165,233,0.25)] tutor-gradient-border"
+          style={{ '--tutor-border-bg-img': 'linear-gradient(to right, #0ea5e9, #38bdf8, #60a5fa)' } as React.CSSProperties}
+        >
           <div className="flex items-center gap-2.5">
             <div className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#02080f] opacity-75" />

@@ -131,20 +131,26 @@ export default function HomePage() {
         </div>
 
         {/* ── Header pill ─────────────────────────────────────────────────────── */}
-        <header className="
-          fixed top-2 left-2 right-2
-          mt-[env(safe-area-inset-top)]
-          md:relative md:top-auto md:left-auto md:right-auto
-          md:mx-8 md:mt-10 md:mb-4
-          px-4 sm:px-6 py-3
-          flex items-center justify-between
-          z-50
-          tutor-gradient-border
-          rounded-[1.5rem] md:rounded-[2rem]
-          shadow-[0_10px_20px_rgba(0,0,0,0.15)] dark:shadow-[0_15px_30px_rgba(0,0,0,0.5),0_0_20px_rgba(21,115,194,0.2)]
-          bg-[#1573C2] dark:bg-gradient-to-r dark:from-[#1573C2]/95 dark:to-[#0d4a87]/95
-          backdrop-blur-md shrink-0 transition-colors duration-300
-        ">
+        <header 
+          className="
+            fixed top-2 left-2 right-2
+            mt-[env(safe-area-inset-top)]
+            md:relative md:top-auto md:left-auto md:right-auto
+            md:mx-8 md:mt-10 md:mb-4
+            px-4 sm:px-6 py-3
+            flex items-center justify-between
+            z-50
+            tutor-gradient-border
+            rounded-[1.5rem] md:rounded-[2rem]
+            shadow-[0_10px_20px_rgba(0,0,0,0.15)] dark:shadow-[0_15px_30px_rgba(0,0,0,0.5),0_0_20px_rgba(21,115,194,0.2)]
+            backdrop-blur-md shrink-0 transition-colors duration-300
+          "
+          style={{
+            '--tutor-border-bg-img': darkMode 
+              ? 'linear-gradient(to right, rgba(21, 115, 194, 0.95), rgba(13, 74, 135, 0.95))' 
+              : 'linear-gradient(#1573C2, #1573C2)'
+          } as React.CSSProperties}
+        >
           <div className="flex items-center gap-2 sm:gap-4 md:gap-5 flex-1 min-w-0">
             {/* Hamburger mobile */}
             <button
