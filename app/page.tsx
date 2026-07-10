@@ -39,10 +39,13 @@ export default function HomePage() {
   const {
     isListening,
     isSpeaking,
+    isMuted,
+    interimText,
     toggleListening,
     stopListening,
     speak,
     stopSpeaking,
+    toggleMute,
     unlockAudio,
   } = useVoice(handleTranscript);
 
@@ -95,7 +98,7 @@ export default function HomePage() {
     <div className="fixed inset-0 flex flex-col md:flex-row overflow-hidden bg-[#f6fbfa] dark:bg-[#020b18] transition-colors duration-300">
 
       {/* ── Modal de voz ─────────────────────────────────────────────────────── */}
-      <VoiceModal isListening={isListening} onStop={stopListening} />
+      <VoiceModal isListening={isListening} interimText={interimText} onStop={stopListening} />
 
       {/* ── Sidebar ──────────────────────────────────────────────────────────── */}
       <Sidebar
@@ -152,9 +155,20 @@ export default function HomePage() {
               <span className="material-symbols-outlined text-[24px]">{sidebarOpen ? 'close' : 'menu'}</span>
             </button>
 
-            {/* Logo */}
-            <div className="flex items-center justify-center w-9 h-9 sm:w-12 sm:h-12 md:w-[72px] md:h-[72px] shrink-0 overflow-hidden rounded-xl">
-              <img src="/logo.png" alt="Logo Tutor" className="w-full h-full object-cover drop-shadow-md" />
+            {/* Botão mudo (mobile) — ao lado do hamburger */}
+            <button
+              className="md:hidden text-white p-1 rounded-xl hover:bg-white/10 transition-all flex items-center justify-center shrink-0 cursor-pointer"
+              onClick={toggleMute}
+              title={isMuted ? 'Ativar áudio' : 'Silenciar'}
+            >
+              <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: isMuted ? "'FILL' 1" : "'FILL' 0" }}>
+                {isMuted ? 'volume_off' : 'volume_up'}
+              </span>
+            </button>
+
+            {/* Logo — tamanho maior com margens negativas para não crescer a barra */}
+            <div className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-[100px] md:h-[100px] shrink-0 -my-2 md:-my-5 overflow-visible rounded-2xl">
+              <img src="/logo.png" alt="Logo Tutor" className="w-full h-full object-contain drop-shadow-lg" />
             </div>
 
             {/* Título */}
@@ -171,6 +185,18 @@ export default function HomePage() {
               title="Nova Conversa"
             >
               <span className="material-symbols-outlined text-[16px] sm:text-[18px] md:text-[24px]">cleaning_services</span>
+            </button>
+            {/* Botão mudo desktop */}
+            <button
+              onClick={toggleMute}
+              className={`text-white p-1 md:p-2 rounded-xl md:rounded-2xl border border-transparent hover:bg-white/10 hover:border-white/20 shadow-sm transition-all flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 md:w-12 md:h-12 cursor-pointer ${
+                isMuted ? 'bg-red-500/30 border-red-400/30' : 'bg-white/5'
+              }`}
+              title={isMuted ? 'Ativar áudio' : 'Silenciar respostas'}
+            >
+              <span className="material-symbols-outlined text-[16px] sm:text-[18px] md:text-[24px]" style={{ fontVariationSettings: isMuted ? "'FILL' 1" : "'FILL' 0" }}>
+                {isMuted ? 'volume_off' : 'volume_up'}
+              </span>
             </button>
             <button
               onClick={toggleTheme}

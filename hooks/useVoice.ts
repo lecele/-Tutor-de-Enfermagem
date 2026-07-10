@@ -1,62 +1,57 @@
 'use client';
 
-// hooks/useVoice.ts — Hook de voz para STT (microfone → texto) e TTS (texto → fala)
-// Portado e adaptado do MedCron (useVoice.js) para TypeScript com Next.js
+// hooks/useVoice.ts — Hook de voz STT + TTS com suporte a modo mudo
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 
-// ── Tipos da Web Speech API (não estão nos tipos padrão do TS strict) ─────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySpeechRecognition = any;
 
-// ── Desbloqueio de áudio (iOS/Safari) ────────────────────────────────────────
-// Safari exige que qualquer interação com áudio seja iniciada em resposta
-// a um gesto do usuário. Esta função cria uma utterance silenciosa para
-// "desbloquear" o motor de áudio no primeiro toque da tela.
-function unlockAudioEngine() {
+// ── Limpeza de Markdown para TTS ──────────────────────────────────────────────
+function cleanTextForSpeech(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`[^`]*`/g, '')
+    .replace(/[*_~#>]/g, '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\b\d{4,}\b/g, (m) => m.split('').join(' '))
+    .replace(/\n{2,}/g, '. ')
+    .trim();
+}
+
+// ── Desbloqueio de áudio iOS/Safari ──────────────────────────────────────────
+export function unlockAudioEngine() {
   if (typeof window === 'undefined' || !window.speechSynthesis) return;
-  const u = new SpeechSynthesisUtterance('\u200B'); // Zero-width space
+  const u = new SpeechSynthesisUtterance('\u200B');
   u.volume = 0;
   u.rate = 10;
   window.speechSynthesis.speak(u);
-}
-
-// ── Limpeza de Markdown para leitura em voz ───────────────────────────────────
-function cleanTextForSpeech(text: string): string {
-  return text
-    .replace(/```[\s\S]*?```/g, '') // remove blocos de código
-    .replace(/`[^`]*`/g, '')         // remove código inline
-    .replace(/[*_~#>]/g, '')         // remove marcações markdown
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // transforma links em texto
-    .replace(/\b\d{4,}\b/g, (m) => m.split('').join(' ')) // separa números longos
-    .replace(/\n{2,}/g, '. ')        // transforma parágrafos em pausas
-    .trim();
 }
 
 // ── Hook principal ────────────────────────────────────────────────────────────
 export function useVoice(onTranscript: (text: string) => void) {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [interimText, setInterimText] = useState(''); // texto parcial durante gravação
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<AnySpeechRecognition>(null);
 
-  // Garante lista de vozes carregada (necessário em alguns navegadores)
+  // Carrega lista de vozes ao montar
   useEffect(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
     window.speechSynthesis.getVoices();
-    window.speechSynthesis.onvoiceschanged = () => {
-      window.speechSynthesis.getVoices();
-    };
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
   }, []);
 
-  // ── TTS: Ler texto em voz alta ──────────────────────────────────────────────
+  // ── TTS: falar ───────────────────────────────────────────────────────────────
   const speak = useCallback((text: string) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    if (isMuted) return; // respeita modo mudo
 
     const cleaned = cleanTextForSpeech(text);
     if (!cleaned) return;
 
-    // Cancela qualquer fala em andamento
     window.speechSynthesis.cancel();
 
     setTimeout(() => {
@@ -65,12 +60,8 @@ export function useVoice(onTranscript: (text: string) => void) {
       utterance.rate = 1.05;
       utterance.pitch = 1.0;
 
-      // Tenta usar voz pt-BR disponível no dispositivo
       const voices = window.speechSynthesis.getVoices();
-      const ptBR = voices.find((v) => {
-        const lang = v.lang.replace('_', '-').toLowerCase();
-        return lang === 'pt-br';
-      });
+      const ptBR = voices.find((v) => v.lang.replace('_', '-').toLowerCase() === 'pt-br');
       if (ptBR) utterance.voice = ptBR;
 
       utterance.onstart = () => setIsSpeaking(true);
@@ -79,30 +70,47 @@ export function useVoice(onTranscript: (text: string) => void) {
 
       window.speechSynthesis.speak(utterance);
     }, 80);
-  }, []);
+  }, [isMuted]);
 
-  // ── Parar fala em andamento ─────────────────────────────────────────────────
+  // ── TTS: parar ───────────────────────────────────────────────────────────────
   const stopSpeaking = useCallback(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
   }, []);
 
-  // ── STT: Parar escuta ───────────────────────────────────────────────────────
+  // ── Toggle mudo ──────────────────────────────────────────────────────────────
+  const toggleMute = useCallback(() => {
+    setIsMuted((prev) => {
+      if (!prev) {
+        // Ficou mudo: cancela qualquer fala em curso
+        if (typeof window !== 'undefined' && window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+        }
+        setIsSpeaking(false);
+      }
+      return !prev;
+    });
+  }, []);
+
+  // ── STT: parar ───────────────────────────────────────────────────────────────
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
       try { recognitionRef.current.stop(); } catch (_) { /* ignora */ }
       recognitionRef.current = null;
     }
     setIsListening(false);
+    setInterimText('');
   }, []);
 
-  // ── STT: Iniciar escuta ─────────────────────────────────────────────────────
+  // ── STT: iniciar ─────────────────────────────────────────────────────────────
   const startListening = useCallback(() => {
-    // Desbloqueio de áudio (crítico para iOS)
-    try { unlockAudioEngine(); } catch (_) { /* ignora */ }
-
     if (typeof window === 'undefined') return;
+
+    // CRÍTICO: cancela TTS antes de abrir o microfone
+    // (browser não permite TTS + STT simultâneos)
+    try { window.speechSynthesis.cancel(); } catch (_) { /* ignora */ }
+    setIsSpeaking(false);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SpeechRecognitionAPI = (window as any).SpeechRecognition
@@ -110,48 +118,80 @@ export function useVoice(onTranscript: (text: string) => void) {
       || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognitionAPI) {
-      alert('Seu navegador não suporta reconhecimento de voz. Use Chrome ou Safari.');
+      alert('Reconhecimento de voz não suportado. Use Chrome ou Safari.');
       return;
     }
 
-    // Aborta sessão anterior se houver
+    // Aborta instância anterior
     if (recognitionRef.current) {
       try { recognitionRef.current.abort(); } catch (_) { /* ignora */ }
+      recognitionRef.current = null;
     }
 
-    const recognition = new SpeechRecognitionAPI();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const recognition = new SpeechRecognitionAPI() as any;
     recognition.lang = 'pt-BR';
     recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.interimResults = true; // habilita texto parcial em tempo real
+    recognition.maxAlternatives = 1;
 
-    recognition.onstart = () => setIsListening(true);
+    recognition.onstart = () => {
+      setIsListening(true);
+      setInterimText('');
+    };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = (event: any) => {
-      const transcript: string = event.results[0][0].transcript;
-      if (transcript?.trim()) {
-        onTranscript(transcript.trim());
+      let interim = '';
+      let finalTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (result.isFinal) {
+          finalTranscript += result[0].transcript;
+        } else {
+          interim += result[0].transcript;
+        }
+      }
+
+      // Mostra texto parcial no modal
+      if (interim) setInterimText(interim);
+
+      // Quando a frase está finalizada, envia
+      if (finalTranscript.trim()) {
+        setInterimText('');
+        onTranscript(finalTranscript.trim());
       }
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onerror = (event: any) => {
-      console.warn('[useVoice] Erro no reconhecimento:', event.error);
+      console.warn('[useVoice] Erro STT:', event.error);
+      // 'no-speech' é normal — apenas para a escuta sem travar
       setIsListening(false);
+      setInterimText('');
+      recognitionRef.current = null;
     };
 
     recognition.onend = () => {
       setIsListening(false);
+      setInterimText('');
       recognitionRef.current = null;
     };
 
     recognitionRef.current = recognition;
-    recognition.start();
+
+    // Pequeno delay para garantir que o TTS foi cancelado antes de abrir o mic
+    setTimeout(() => {
+      try { recognition.start(); } catch (e) {
+        console.error('[useVoice] Falha ao iniciar STT:', e);
+        setIsListening(false);
+      }
+    }, 150);
   }, [onTranscript]);
 
-  // ── Toggle: Alterna entre ouvir e parar ────────────────────────────────────
+  // ── Toggle: abrir/fechar microfone ───────────────────────────────────────────
   const toggleListening = useCallback(() => {
-    try { unlockAudioEngine(); } catch (_) { /* ignora */ }
     if (isListening) {
       stopListening();
     } else {
@@ -162,10 +202,13 @@ export function useVoice(onTranscript: (text: string) => void) {
   return {
     isListening,
     isSpeaking,
+    isMuted,
+    interimText,
     toggleListening,
     stopListening,
     speak,
     stopSpeaking,
+    toggleMute,
     unlockAudio: unlockAudioEngine,
   };
 }
