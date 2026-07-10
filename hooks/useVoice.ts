@@ -64,8 +64,27 @@ export function useVoice(onTranscript: (text: string) => void) {
       utterance.pitch = 1.0;
 
       const voices = window.speechSynthesis.getVoices();
-      const ptBR = voices.find((v) => v.lang.replace('_', '-').toLowerCase() === 'pt-br');
-      if (ptBR) utterance.voice = ptBR;
+      const isPtBR = (v: any) => {
+        const lang = v.lang.replace('_', '-').toLowerCase();
+        return lang === 'pt-br' || lang === 'pt-br-br';
+      };
+
+      // Procura por vozes premium/enhanced (Siri, Google, Daniel, Felipe) em pt-BR
+      const premiumVoice = voices.find((v) => 
+        isPtBR(v) && (
+          v.name.includes('Siri') || 
+          v.name.includes('Google') || 
+          v.name.includes('Daniel') || 
+          v.name.includes('Felipe') || 
+          v.name.toLowerCase().includes('enhanced')
+        )
+      );
+
+      if (premiumVoice) {
+        utterance.voice = premiumVoice;
+      }
+      // Se não houver voz premium na lista, deixamos utterance.voice como undefined.
+      // Isso força o iOS/Chrome a usar a voz nativa padrão de alta qualidade do aparelho (Siri).
 
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
