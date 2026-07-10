@@ -123,13 +123,13 @@ async function embedQuery(text: string): Promise<number[]> {
   return result.embedding.values;
 }
 
-// ── Retrieval (Restaurado: match_count=5 e threshold=0.45 para cobertura total) 
+// ── Retrieval (Dinâmico: match_count=5 com threshold configurável) 
 
-async function retrieveDocs(embedding: number[]): Promise<Document[]> {
+async function retrieveDocs(embedding: number[], threshold = 0.45): Promise<Document[]> {
   const supabase = getSupabase();
   const { data, error } = await (supabase.rpc as any)('match_documents', {
     query_embedding: embedding,
-    match_threshold: parseFloat(process.env.RAG_MATCH_THRESHOLD || '0.45'),
+    match_threshold: threshold,
     match_count: parseInt(process.env.RAG_MATCH_COUNT || '5'),
   });
   if (error) { console.error('[retrieve]', error); return []; }
@@ -327,8 +327,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Recupera documentos com os parâmetros originais de alta qualidade
-    const docs = await retrieveDocs(embedding);
+    // Se a pergunta for sobre informações do curso, reduzimos o threshold
+    // para capturar dados do Plano de Ensino com similaridade mais baixa.
+    const isCourseQuery = /prof|horar|atend|cron|calend|nota|avali|plano|trabalho|conteudo|carga/i.test(question);
+    const threshold = isCourseQuery ? 0.30 : 0.45;
+
+    // Recupera documentos com o threshold dinâmico
+    const docs = await retrieveDocs(embedding, threshold);
 
     // Gera a resposta com o prompt completo e sem cortes artificiais
     const answer = await generateResponse(question, docs, history);
