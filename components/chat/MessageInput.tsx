@@ -1,18 +1,30 @@
 'use client';
 
-// components/chat/MessageInput.tsx — Input pill estilo InterAtiva, azul
+// components/chat/MessageInput.tsx — Input pill com botão de microfone
 
 import { useState, useRef, useCallback, KeyboardEvent } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface MessageInputProps {
   onSend: (message: string) => void;
   isLoading: boolean;
   disabled?: boolean;
+  isListening?: boolean;
+  isSpeaking?: boolean;
+  onMicClick?: () => void;
+  onStopSpeaking?: () => void;
 }
 
-export function MessageInput({ onSend, isLoading, disabled }: MessageInputProps) {
+export function MessageInput({
+  onSend,
+  isLoading,
+  disabled,
+  isListening = false,
+  isSpeaking = false,
+  onMicClick,
+  onStopSpeaking,
+}: MessageInputProps) {
   const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -48,11 +60,11 @@ export function MessageInput({ onSend, isLoading, disabled }: MessageInputProps)
       className="relative group w-full"
       onSubmit={(e) => { e.preventDefault(); handleSend(); }}
     >
-      {/* Pill container — igual ao InterAtiva */}
+      {/* Pill container */}
       <div className="
         flex items-center gap-2
         bg-[#1573C2] dark:bg-[#0D3A6E]
-        rounded-[2rem] p-1 md:p-2 pl-4 md:pl-8
+        rounded-[2rem] p-1 md:p-2 pl-4 md:pl-6
         shadow-[0_10px_20px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_20px_rgba(0,0,0,0.4)]
         focus-within:shadow-[0_0_20px_rgba(21,115,194,0.3)]
         transition-all
@@ -76,6 +88,58 @@ export function MessageInput({ onSend, isLoading, disabled }: MessageInputProps)
           style={{ maxHeight: '144px' }}
           autoComplete="off"
         />
+
+        {/* Botão de parar fala (aparece apenas quando está falando) */}
+        {isSpeaking && onStopSpeaking && (
+          <motion.button
+            type="button"
+            onClick={onStopSpeaking}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            className="
+              flex items-center justify-center
+              w-10 h-10 md:w-11 md:h-11
+              rounded-2xl shrink-0 cursor-pointer
+              bg-amber-500 hover:bg-amber-600
+              text-white shadow-md transition-all active:scale-95
+            "
+            title="Parar leitura"
+          >
+            <span className="material-symbols-outlined text-[20px] select-none" style={{ fontVariationSettings: "'FILL' 1" }}>
+              volume_off
+            </span>
+          </motion.button>
+        )}
+
+        {/* Botão de Microfone */}
+        {onMicClick && (
+          <button
+            type="button"
+            onClick={onMicClick}
+            disabled={isLoading || disabled}
+            title={isListening ? 'Parar gravação' : 'Falar com o Tutor'}
+            className={`
+              flex items-center justify-center
+              w-10 h-10 md:w-11 md:h-11
+              rounded-2xl shrink-0 cursor-pointer
+              shadow-md transition-all active:scale-95
+              border border-white/10
+              disabled:opacity-40 disabled:cursor-not-allowed
+              ${isListening
+                ? 'bg-red-500 hover:bg-red-600 animate-pulse'
+                : 'bg-white/15 hover:bg-white/25 text-white'
+              }
+            `}
+          >
+            <span
+              className="material-symbols-outlined text-[20px] md:text-[22px] select-none text-white"
+              style={{ fontVariationSettings: isListening ? "'FILL' 1" : "'FILL' 0" }}
+            >
+              {isListening ? 'mic_off' : 'mic'}
+            </span>
+          </button>
+        )}
 
         {/* Botão Enviar */}
         <button
