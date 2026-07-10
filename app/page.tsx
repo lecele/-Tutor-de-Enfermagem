@@ -161,17 +161,9 @@ export default function HomePage() {
               <span className="material-symbols-outlined text-[24px]">{sidebarOpen ? 'close' : 'menu'}</span>
             </button>
 
-            {/* Logo — tamanho maior com margens negativas para não crescer a barra com contorno e sombra 3D */}
-            <div className="
-              flex items-center justify-center 
-              w-12 h-12 min-[360px]:w-14 min-[360px]:h-14 sm:w-[76px] sm:h-[76px] md:w-[100px] md:h-[100px] 
-              shrink-0 -my-2 sm:-my-4 md:-my-6 
-              overflow-hidden rounded-2xl 
-              border-2 border-white/30 
-              shadow-[0_8px_20px_rgba(0,0,0,0.4),0_0_12px_rgba(21,115,194,0.3)]
-              transition-transform duration-300 hover:scale-105 hover:rotate-2
-            ">
-              <img src="/logo.png" alt="Logo Tutor" className="w-full h-full object-cover" />
+            {/* Logo — contorno e profundidade aplicados diretamente ao PNG sem caixa opaca de fundo */}
+            <div className="flex items-center justify-center w-16 h-16 sm:w-[76px] sm:h-[76px] md:w-[110px] md:h-[110px] shrink-0 -my-3 sm:-my-4 md:-my-6 overflow-visible rounded-2xl transition-transform duration-300 hover:scale-105">
+              <img src="/logo.png" alt="Logo Tutor" className="w-full h-full object-contain tutor-logo-premium" />
             </div>
 
             {/* Título — tamanho ajustado para caber por inteiro no celular sem corte com contorno e profundidade */}
