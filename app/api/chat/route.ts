@@ -19,7 +19,8 @@ const GREETING_RESPONSE =
   '2. **Simulado de Prova**\n' +
   '3. **Informações do Curso**\n' +
   '4. **Encerrar Sessão**\n\n' +
-  'Digite o número ou o nome da opção desejada!';
+  '**Clique diretamente na opção desejada**, ou digite o número ou o nome no chat!';
+
 
 const FAREWELL_RESPONSE =
   'Sessão encerrada. Bons estudos! Estarei aqui quando precisar. 👋';

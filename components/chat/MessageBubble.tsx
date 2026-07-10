@@ -1,7 +1,8 @@
 'use client';
 
-// components/chat/MessageBubble.tsx — Balões no estilo InterAtiva, azul
+// components/chat/MessageBubble.tsx — Balões com suporte a opções de menu clicáveis
 
+import { useMemo, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -11,6 +12,23 @@ import { SourceBadges } from './SourceBadges';
 interface MessageBubbleProps {
   message: Message;
   index: number;
+}
+
+// ── Dispatch de seleção de opção ─────────────────────────────────────────────
+function dispatchOptionClick(text: string) {
+  window.dispatchEvent(new CustomEvent('suggestion-click', { detail: text }));
+}
+
+// ── Extrai texto puro de nós React (para capturar o texto dos li) ────────────
+function extractText(node: ReactNode): string {
+  if (typeof node === 'string') return node;
+  if (typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(extractText).join('');
+  if (node && typeof node === 'object' && 'props' in node) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return extractText((node as any).props?.children);
+  }
+  return '';
 }
 
 export function MessageBubble({ message, index }: MessageBubbleProps) {
@@ -29,7 +47,7 @@ export function MessageBubble({ message, index }: MessageBubbleProps) {
       </div>
 
       {/* Conteúdo */}
-      <div className={`flex max-w-[78%] flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+      <div className={`flex max-w-[82%] flex-col ${isUser ? 'items-end' : 'items-start'}`}>
         <span className={`mb-1 text-[10px] font-semibold uppercase tracking-wider ${
           isUser ? 'text-[#1573C2] dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'
         }`}>
@@ -92,6 +110,71 @@ function AgentBubble({ content, sourcesFound, hasContext }: {
   sourcesFound?: number;
   hasContext?: boolean;
 }) {
+  // Detecta se a mensagem contém o menu principal
+  const isMenuMessage = useMemo(() => content.includes('MENU PRINCIPAL'), [content]);
+
+  // Componentes customizados do ReactMarkdown
+  const markdownComponents = useMemo(() => ({
+    // Renderiza itens de lista ordenada como botões quando é o menu
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    li: ({ children, ...props }: any) => {
+      if (!isMenuMessage) return <li {...props}>{children}</li>;
+
+      const label = extractText(children).trim();
+      if (!label) return <li {...props}>{children}</li>;
+
+      return (
+        <li className="list-none !pl-0 !ml-0">
+          <button
+            type="button"
+            onClick={() => dispatchOptionClick(label)}
+            className="
+              group flex items-center gap-3 w-full text-left
+              rounded-xl px-4 py-2.5 my-1
+              border border-[#1573C2]/25 dark:border-blue-400/20
+              bg-blue-50/60 dark:bg-blue-950/20
+              hover:bg-[#1573C2] dark:hover:bg-[#1573C2]
+              hover:border-[#1573C2] dark:hover:border-[#1573C2]
+              transition-all duration-150 cursor-pointer
+              shadow-sm hover:shadow-md active:scale-[0.98]
+            "
+          >
+            <span className="
+              material-symbols-outlined text-[16px]
+              text-[#1573C2] dark:text-blue-400
+              group-hover:text-white
+              transition-colors shrink-0
+            " style={{ fontVariationSettings: "'FILL' 1" }}>
+              touch_app
+            </span>
+            <span className="
+              text-[13.5px] font-semibold
+              text-[#1573C2] dark:text-blue-400
+              group-hover:text-white
+              transition-colors
+            ">
+              {children}
+            </span>
+            <span className="
+              material-symbols-outlined text-[14px] ml-auto
+              text-[#1573C2]/40 dark:text-blue-400/40
+              group-hover:text-white/70
+              transition-colors
+            ">
+              chevron_right
+            </span>
+          </button>
+        </li>
+      );
+    },
+    // Remove bullets da ol quando é menu (os botões já têm seu layout)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ol: ({ children, ...props }: any) => {
+      if (!isMenuMessage) return <ol {...props}>{children}</ol>;
+      return <ol className="!list-none !pl-0 !ml-0 flex flex-col gap-0.5 mt-1">{children}</ol>;
+    },
+  }), [isMenuMessage]);
+
   return (
     <div className="rounded-2xl rounded-bl-none border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0d1e35] px-5 py-4 shadow-sm">
       <div className="
@@ -105,7 +188,9 @@ function AgentBubble({ content, sourcesFound, hasContext }: {
         prose-a:text-[#1573C2] prose-a:font-semibold prose-a:underline
         prose-blockquote:border-l-[#1573C2] prose-blockquote:bg-blue-50 dark:prose-blockquote:bg-blue-950/20 prose-blockquote:px-4 prose-blockquote:py-1 prose-blockquote:rounded-r-lg
       ">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+          {content}
+        </ReactMarkdown>
       </div>
 
       {sourcesFound !== undefined && hasContext !== undefined && (
