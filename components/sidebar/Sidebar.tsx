@@ -76,7 +76,7 @@ export function Sidebar({ isOpen, onClose, onNewSession, toggleTheme, darkMode }
               text-white
               bg-[#1573C2]
               hover:bg-[#0d4a87]
-              border border-blue-400/30
+              tutor-gradient-border
               rounded-full px-4 py-2 md:py-2.5
               shadow-sm transition-all duration-200
               hover:shadow-md hover:-translate-y-[0.5px]

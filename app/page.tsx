@@ -139,7 +139,7 @@ export default function HomePage() {
           px-4 sm:px-6 py-3
           flex items-center justify-between
           z-50
-          border border-blue-300/40
+          tutor-gradient-border
           rounded-[1.5rem] md:rounded-[2rem]
           shadow-[0_10px_20px_rgba(0,0,0,0.15)] dark:shadow-[0_15px_30px_rgba(0,0,0,0.5),0_0_20px_rgba(21,115,194,0.2)]
           bg-[#1573C2] dark:bg-gradient-to-r dark:from-[#1573C2]/95 dark:to-[#0d4a87]/95
