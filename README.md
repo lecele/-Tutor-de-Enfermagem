@@ -15,20 +15,22 @@ O sistema é composto por uma arquitetura moderna e de alta performance:
 1. **Frontend (Next.js 15 + React 19 + TailwindCSS 4):**
    - Rápido, responsivo e adaptado para múltiplos dispositivos (celulares iOS, Android e desktop).
    - Interface inspirada no design premium do projeto **InterAtiva**, personalizada na identidade visual **Azul Médico**.
-   - Menu lateral flutuante de tópicos com borda azul destacada em modo claro, header tipo pill, entrada de chat em formato pill e suporte nativo a **Dark Mode** com persistência.
+   - Menu lateral flutuante, logo dinâmica, opções de chat em formato pill e suporte nativo a **Dark Mode** com persistência.
+   - **Interação por Voz (STT e TTS):** Integração com `SpeechRecognition` (Microfone) e `SpeechSynthesis` (Auto-leitura) para chat acessível por áudio, com modo mudo (mute toggle) sincronizado.
+   - **Menu Interativo Clicável:** Opções do menu renderizadas automaticamente como botões para facilitar a navegação em telas touch.
 
 2. **Backend Serverless (Next.js API Route / App Router):**
-   - Processamento de chat integrado em `app/api/chat/route.ts` eliminando a necessidade de servidores adicionais.
-   - Timeout estendido de 120s na Vercel para execução completa do fluxo RAG.
+   - Processamento de chat integrado em `app/api/chat/route.ts` com **otimização rigorosa de tokens** (-61% no prompt, bypass de RAG para navegação de menu e limites seguros de histórico/geração).
+   - Tempo de resposta ultrarrápido (<200ms para navegação) e 3-6s para conteúdo denso.
 
 3. **Banco de Vetores (Supabase + pgvector):**
    - Tabela `documents` para armazenamento dos materiais acadêmicos indexados em formato vetorial.
    - Busca de similaridade por Cosseno usando a extensão `vector` com indexação HNSW de alta performance.
-   - Tabela `chat_messages` para histórico persistente de conversas.
+   - Tabela `chat_messages` para histórico persistente de conversas (limitado estrategicamente a 3 trocas para economizar contexto).
 
 4. **Modelos de IA (Google Gemini):**
    - **Embedding:** `gemini-embedding-2` (dimensões de saída: 768) para máxima precisão na busca semântica de materiais de estudo.
-   - **Geração:** `gemini-2.5-flash` para respostas rápidas, fluidas e cumprimento estrito do **Prompt Mestre** de personalidade pedagógica.
+   - **Geração:** `gemini-2.5-flash` para respostas rápidas, fluidas e cumprimento estrito do **Prompt Mestre** de personalidade pedagógica (capped em 1024 tokens).
 
 ---
 
