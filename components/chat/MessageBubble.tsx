@@ -122,7 +122,9 @@ function AgentBubble({ content, sourcesFound, hasContext }: {
       lower.includes('sugestões de temas:') ||
       lower.includes('deseja aprofundar') ||
       lower.includes('deseja continuar') ||
-      lower.includes('voltar ao menu principal')
+      lower.includes('voltar ao menu principal') ||
+      lower.includes('informações da disciplina') ||
+      lower.includes('informações do curso')
     );
   }, [content]);
 
