@@ -161,13 +161,21 @@ export default function HomePage() {
               <span className="material-symbols-outlined text-[24px]">{sidebarOpen ? 'close' : 'menu'}</span>
             </button>
 
-            {/* Logo — tamanho maior com margens negativas para não crescer a barra */}
-            <div className="flex items-center justify-center w-16 h-16 sm:w-[76px] sm:h-[76px] md:w-[110px] md:h-[110px] shrink-0 -my-3 sm:-my-4 md:-my-6 overflow-visible rounded-2xl">
-              <img src="/logo.png" alt="Logo Tutor" className="w-full h-full object-contain drop-shadow-lg" />
+            {/* Logo — tamanho maior com margens negativas para não crescer a barra com contorno e sombra 3D */}
+            <div className="
+              flex items-center justify-center 
+              w-12 h-12 min-[360px]:w-14 min-[360px]:h-14 sm:w-[76px] sm:h-[76px] md:w-[100px] md:h-[100px] 
+              shrink-0 -my-2 sm:-my-4 md:-my-6 
+              overflow-hidden rounded-2xl 
+              border-2 border-white/30 
+              shadow-[0_8px_20px_rgba(0,0,0,0.4),0_0_12px_rgba(21,115,194,0.3)]
+              transition-transform duration-300 hover:scale-105 hover:rotate-2
+            ">
+              <img src="/logo.png" alt="Logo Tutor" className="w-full h-full object-cover" />
             </div>
 
-            {/* Título — tamanho ajustado para caber por inteiro no celular sem corte */}
-            <h1 className="text-sm min-[360px]:text-base sm:text-xl md:text-3xl font-bold tracking-wide text-white dark:text-blue-50 whitespace-nowrap overflow-visible">
+            {/* Título — tamanho ajustado para caber por inteiro no celular sem corte com contorno e profundidade */}
+            <h1 className="text-sm min-[360px]:text-base sm:text-xl md:text-3xl font-bold tracking-wide text-white dark:text-blue-50 whitespace-nowrap overflow-visible tutor-title-outline">
               Tutor de Enfermagem
             </h1>
           </div>

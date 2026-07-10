@@ -75,3 +75,9 @@ html, body {
     linear-gradient(135deg, #1573C2 0%, #0da58e 50%, #a3e635 100%) !important;
   border: 2px solid transparent !important;
 }
+
+/* ── Contorno e profundidade no título ────────────────────────────────────── */
+.tutor-title-outline {
+  -webkit-text-stroke: 1.2px #093c6e;
+  text-shadow: 2.5px 2.5px 5px rgba(0, 0, 0, 0.4);
+}
