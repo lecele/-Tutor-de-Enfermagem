@@ -32,6 +32,51 @@ const FALLBACK_RESPONSE =
   '- Bases de dados científicas: **LILACS**, **BVS**, **PubMed**\n' +
   '- Publicações do **COFEN** (cofen.gov.br) e **Ministério da Saúde** (saude.gov.br)';
 
+const LOCAL_COURSE_INFO = `
+Documento: PLANO ENSINO INT5224 2026-2.pdf
+Conteúdo:
+1. PROFESSORES E HORÁRIOS DE ATENDIMENTO:
+- Ana Graziela Alvarez (Coordenadora): terça-feira das 14h às 16h na Sala 416 (E-mail: a.graziela@ufsc.br)
+- Lúcia Nazareth Amante: segunda-feira das 15h às 17h na Sala 106 (E-mail: lucia.amante@ufsc.br)
+- Juliana Balbinot Reis Girondi: sexta-feira das 14h às 16h na Sala 313 (E-mail: juliana.balbinot@ufsc.br)
+- Outras professoras da equipe: Neide da Silva Knihs (neide.knihs@ufsc.br), Luciara Fabiane Sebold (fabiane.sebold@ufsc.br), Keyla Cristiane do Nascimento (keyla.n@ufsc.br) e Vanessa Martinhago Borges Fernandes (vanessa.fernandes@ufsc.br).
+- Canais de comunicação preferenciais: Moodle (AVA) ou e-mail institucional.
+
+2. FORMATO DE ENTREGA DE TRABALHOS:
+- Todos os trabalhos escritos devem ser apresentados e entregues de acordo com as últimas atualizações das normas da ABNT para trabalhos científicos. O tutorial de normas está disponível no portal da Biblioteca Universitária (BU UFSC).
+- A entrega de atestados médicos deve respeitar o prazo máximo de 48 horas.
+- Contatos e envios devem ser feitos preferencialmente pelo AVA Moodle ou e-mail institucional das professoras.
+
+3. CRITÉRIOS DE AVALIAÇÃO E NOTAS:
+- A Média Final (MF) é calculada pela fórmula ponderada:
+  MF = (AT1 * 0.35) + (AT2 * 0.15) + (ATP * 0.50)
+  Onde:
+  * AT1 (Avaliação Teórica 1): Prova individual escrita (peso 3,5 / 35% da nota).
+  * AT2 (Avaliação Teórica 2): Prova em dupla escrita (peso 1,5 / 15% da nota).
+  * ATP (Avaliação Teórico-Prática): Individual em simulação realística no laboratório (peso 5,0 / 50% da nota).
+- Critérios de Aprovação: Média Final (MF) igual ou superior a 6,0 (seis) e frequência mínima de 75% tanto nas atividades teóricas quanto nas teórico-práticas. Caso contrário, o estudante será reprovado.
+
+4. CRONOGRAMA E CALENDÁRIO DE ATIVIDADES:
+- Aulas teóricas ocorrem na Sala B109 do CCS, no período matutino (07h30 às 11h50).
+- Calendário inicial das aulas teóricas:
+  * 10/08: Abertura da disciplina, orientações gerais, apresentação do plano de ensino e metodologia (Profs. Ana e Neide).
+  * 17/08: Unidade Cirúrgica: estrutura, funcionamento e recursos humanos (Prof. Luciara).
+  * 24/08: Terminologia cirúrgica: nomenclatura e conceitos básicos (Prof. Vanessa).
+  * 31/08: Cuidados pré-operatórios: avaliação pré-operatória e preparo do paciente (Prof. Juliana).
+  * 07/09: Feriado (Independência do Brasil).
+  * 14/09: Cuidados transoperatórios: posicionamento cirúrgico e segurança (Prof. Keyla).
+  * 21/09: Anestesia: tipos, drogas e repercussões sistêmicas (Prof. Luciara).
+  * 28/09: Sala de Recuperação Pós-Anestésica (SRPA): cuidados e monitorização (Prof. Neide).
+  * 05/10: Cuidados pós-operatórios na unidade de internação (Prof. Ana).
+  * 12/10: Feriado (Nossa Senhora Aparecida).
+  * 19/10: Avaliação Teórica 1 (AT1).
+
+5. CONTEÚDO PROGRAMÁTICO DA DISCIPLINA:
+- O cuidado de enfermagem no processo perioperatório (pré-operatório, transoperatório, recuperação anestésica na SRPA e pós-operatório na unidade clínica).
+- Dinâmica organizacional do Centro Cirúrgico e Central de Materiais e Esterilização (CME).
+- Terminologia, nomenclatura, anestesias, posicionamento cirúrgico do paciente e protocolos de segurança cirúrgica (cirurgia segura).
+`;
+
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
 interface ChatRequest {
@@ -442,7 +487,20 @@ export async function POST(req: NextRequest) {
     const threshold = isCourseQuery ? 0.30 : 0.45;
 
     // Recupera documentos com o threshold dinâmico
-    const docs = await retrieveDocs(embedding, threshold);
+    let docs = await retrieveDocs(embedding, threshold);
+
+    // Se for uma busca sobre informações do curso/disciplina, injetamos
+    // o documento local estruturado do Plano de Ensino para garantir resposta 100% precisa.
+    if (isCourseQuery) {
+      docs = [
+        {
+          content: LOCAL_COURSE_INFO,
+          source: 'PLANO ENSINO INT5224 2026-2.pdf',
+          similarity: 0.99
+        } as any,
+        ...docs
+      ];
+    }
 
     // Gera a resposta com o prompt completo e sem cortes artificiais
     const answer = await generateResponse(question, docs, history);
