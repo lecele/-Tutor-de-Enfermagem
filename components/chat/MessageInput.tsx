@@ -2,7 +2,7 @@
 
 // components/chat/MessageInput.tsx — Input pill com botão de microfone
 
-import { useState, useRef, useCallback, KeyboardEvent } from 'react';
+import { useState, useRef, useCallback, useEffect, KeyboardEvent } from 'react';
 import { Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -30,7 +30,19 @@ export function MessageInput({
   onStopSpeaking,
 }: MessageInputProps) {
   const [value, setValue] = useState('');
+  const [placeholder, setPlaceholder] = useState('Pergunte...');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Ajusta o placeholder dinamicamente para não quebrar linha no celular
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const updatePlaceholder = () => {
+      setPlaceholder(window.innerWidth < 640 ? 'Pergunte...' : 'Pergunte ao Tutor...');
+    };
+    updatePlaceholder();
+    window.addEventListener('resize', updatePlaceholder);
+    return () => window.removeEventListener('resize', updatePlaceholder);
+  }, []);
 
   const canSend = value.trim().length > 0 && !isLoading && !disabled;
 
@@ -82,12 +94,12 @@ export function MessageInput({
           onChange={(e) => { setValue(e.target.value); handleInput(); }}
           onKeyDown={handleKeyDown}
           disabled={isLoading || disabled}
-          placeholder="Pergunte ao Tutor..."
+          placeholder={placeholder}
           className="
             w-full bg-transparent border-none focus:outline-none
             text-white placeholder-white/70 dark:placeholder-white/50
-            font-medium text-base
-            py-2.5 md:py-3 resize-none disabled:opacity-50
+            font-medium text-sm sm:text-base
+            py-2 md:py-3 resize-none disabled:opacity-50
           "
           style={{ maxHeight: '144px' }}
           autoComplete="off"
