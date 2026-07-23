@@ -72,7 +72,7 @@ export default function HomePage() {
             mt-[env(safe-area-inset-top)]
             md:relative md:top-auto md:left-auto md:right-auto
             md:max-w-[45rem] md:mx-auto md:mt-4 md:mb-2
-            p-1 md:p-2 pl-2 md:pl-3
+            p-2 md:p-2 pl-3 md:pl-4
             flex items-center justify-between gap-2
             z-50
             tutor-gradient-border
@@ -119,7 +119,7 @@ export default function HomePage() {
         </header>
 
         {/* ── Mensagens ─────────────────────────────────────────────────────────── */}
-        <section className="flex-1 overflow-y-auto px-3 py-2 md:px-8 md:py-4 scroll-smooth z-10 w-full max-w-3xl mx-auto flex flex-col gap-3 pt-[3.75rem] mt-[env(safe-area-inset-top)] md:mt-0 md:pt-2 relative">
+        <section className="flex-1 overflow-y-auto px-3 py-2 md:px-8 md:py-4 scroll-smooth z-10 w-full max-w-3xl mx-auto flex flex-col gap-3 pt-[5.75rem] mt-[env(safe-area-inset-top)] md:mt-0 md:pt-2 relative">
           <div className="relative z-10 w-full flex flex-col gap-4">
             {isEmpty ? (
               <WelcomeMenu onSelect={sendMessage} />
