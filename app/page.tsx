@@ -71,7 +71,7 @@ export default function HomePage() {
             fixed top-2 left-2 right-2
             mt-[env(safe-area-inset-top)]
             md:relative md:top-auto md:left-auto md:right-auto
-            md:max-w-3xl md:mx-auto md:mt-4 md:mb-2
+            md:max-w-[45rem] md:mx-auto md:mt-4 md:mb-2
             p-1 md:p-2 pl-2 md:pl-3
             flex items-center justify-between gap-2
             z-50
@@ -88,7 +88,7 @@ export default function HomePage() {
         >
           {/* Logo + Título */}
           <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-            <div className="flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 shrink-0 rounded-xl transition-transform duration-300 hover:scale-105">
+            <div className="flex items-center justify-center w-16 h-16 md:w-[4.5rem] md:h-[4.5rem] shrink-0 rounded-2xl transition-transform duration-300 hover:scale-105">
               <img src="/logo.png" alt="Logo Tutor" className="w-full h-full object-contain tutor-logo-premium" />
             </div>
             <h1 className="text-base sm:text-lg md:text-xl font-bold tracking-wide text-white dark:text-blue-50 whitespace-nowrap tutor-title-outline">
@@ -103,7 +103,7 @@ export default function HomePage() {
               text-white rounded-2xl md:rounded-[1.2rem]
               tutor-gradient-border shadow-md transition-all active:scale-95
               flex items-center justify-center
-              w-11 h-11 md:w-14 md:h-14
+              w-9 h-9 md:w-11 md:h-11
               cursor-pointer shrink-0
               [--tutor-border-bg:#0d4a87]
               hover:[--tutor-border-bg:#0a3a6b]
@@ -112,7 +112,7 @@ export default function HomePage() {
             "
             title="Alternar Tema"
           >
-            <span className="material-symbols-outlined text-[22px] md:text-[26px] select-none">
+            <span className="material-symbols-outlined text-[18px] md:text-[22px] select-none">
               {darkMode ? 'light_mode' : 'dark_mode'}
             </span>
           </button>
