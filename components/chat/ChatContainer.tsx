@@ -16,6 +16,7 @@ interface ChatContainerProps {
   error: string | null;
   messagesEndRef: RefObject<HTMLDivElement | null>;
   onSend: (message: string) => void;
+  onNewSession: () => void;
   onClearError: () => void;
   isBackendOnline: boolean | null;
 }
@@ -26,6 +27,7 @@ export function ChatContainer({
   error,
   messagesEndRef,
   onSend,
+  onNewSession,
   onClearError,
   isBackendOnline,
 }: ChatContainerProps) {
@@ -103,6 +105,7 @@ export function ChatContainer({
       <div className="mx-auto w-full max-w-3xl px-8 pb-6">
         <MessageInput
           onSend={onSend}
+          onNewSession={onNewSession}
           isLoading={isLoading}
           disabled={isBackendOnline === false}
         />
