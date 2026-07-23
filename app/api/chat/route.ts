@@ -23,6 +23,28 @@ const GREETING_RESPONSE =
 const FAREWELL_RESPONSE =
   'Sessão encerrada. Bons estudos! Estarei aqui quando precisar.';
 
+const RESUMO_MENU_RESPONSE =
+  'Qual tema da disciplina Enfermagem Perioperatória você deseja estudar?\n\n' +
+  '*(Exemplos: Cuidados Pré-Operatórios, Anestesia, Posicionamento Cirúrgico, SRPA, Central de Material e Esterilização...)*';
+
+const SIMULADO_MENU_RESPONSE =
+  'Qual tema você deseja para o simulado de prova?\n\n' +
+  '*(Exemplos: Cuidados Pré-Operatórios, Transoperatório, Anestesia e SRPA, Protocolos de Cirurgia Segura...)*';
+
+const INFO_MENU_RESPONSE =
+  '**Informações da Disciplina INT 5224 — O Cuidado no Processo de Viver Humano II (Condição Cirúrgica)**\n\n' +
+  '• **Professores e Atendimento:**\n' +
+  '  - Profª Ana Graziela Alvarez (Coordenadora): Terças 14h-16h (Sala 416)\n' +
+  '  - Profª Lúcia Nazareth Amante: Segundas 15h-17h (Sala 106)\n' +
+  '  - Profª Juliana Balbinot: Sextas 14h-16h (Sala 313)\n' +
+  '  - Equipe: Profas. Neide Knihs, Luciara Sebold, Keyla Nascimento e Vanessa Fernandes.\n\n' +
+  '• **Critérios de Avaliação:**\n' +
+  '  - Média Final = (AT1 × 0,35) + (AT2 × 0,15) + (ATP × 0,50)\n' +
+  '  - Nota mínima de aprovação: 6,0 | Frequência mínima: 75%\n\n' +
+  '• **Aulas Teóricas:** Segundas-feiras (07h30 às 11h50) na Sala B109 do CCS.\n\n' +
+  '• **Trabalhos e Atestados:** Formato ABNT. Atestados médicos até 48h via Moodle.\n\n' +
+  'Qual informação você gostaria de aprofundar ou deseja voltar ao menu principal?';
+
 const FALLBACK_RESPONSE =
   'Desculpe, o material de estudo disponível não contém informações suficientes ' +
   'para responder a sua pergunta com precisão acadêmica.\n\n' +
@@ -103,22 +125,41 @@ const FAREWELL_TOKENS = new Set([
   '4', 'encerrar', 'sair', 'tchau', 'bye', 'adeus', 'finalizar', 'encerrar sessão',
 ]);
 
-function detectIntent(text: string): 'greeting' | 'farewell' | 'content' {
+type Intent = 'greeting' | 'farewell' | 'menu_resumo' | 'menu_simulado' | 'menu_info' | 'content';
+
+function detectIntent(text: string): Intent {
   const norm = text
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^\w\s]/g, ' ')
     .trim();
+
+  if (!norm) return 'greeting';
+
+  // Correspondência exata das escolhas do menu
+  if (/^(1|opcao 1|resumo de conteudo|1 resumo de conteudo)$/.test(norm)) {
+    return 'menu_resumo';
+  }
+  if (/^(2|opcao 2|simulado de prova|simulado|2 simulado de prova)$/.test(norm)) {
+    return 'menu_simulado';
+  }
+  if (/^(3|opcao 3|informacoes da disciplina|informacao da disciplina|3 informacoes da disciplina)$/.test(norm)) {
+    return 'menu_info';
+  }
+  if (/^(4|opcao 4|encerrar sessao|encerrar|sair|tchau|bye|adeus|finalizar)$/.test(norm)) {
+    return 'farewell';
+  }
+
   const words = norm.split(/\s+/).filter(Boolean);
 
-  if (words.length === 0) return 'greeting';
-
-  // Adeus / encerrar sessão
-  if (words.length <= 3 && words.some((w) => FAREWELL_TOKENS.has(w))) return 'farewell';
-
-  // Saudação / menu / navegação inicial (não intercepta opções do menu)
-  if (words.length <= 4 && words.some((w) => GREETING_TOKENS.has(w))) return 'greeting';
+  // Saudação / menu / navegação inicial
+  if (
+    words.length <= 3 &&
+    words.some((w) => ['oi', 'ola', 'opa', 'bom', 'boa', 'hello', 'hi', 'salve', 'menu', 'inicio', 'comecar', 'voltar'].includes(w))
+  ) {
+    return 'greeting';
+  }
 
   return 'content';
 }
@@ -456,6 +497,42 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // ── Rota rápida: menu de resumo ───────────────────────────────────────────
+    if (intent === 'menu_resumo') {
+      saveMessages(session_id, question, RESUMO_MENU_RESPONSE);
+      return NextResponse.json({
+        answer: RESUMO_MENU_RESPONSE,
+        sources_found: 0,
+        has_context: false,
+        chat_history_length: 1,
+        processing_time_ms: Date.now() - startTime,
+      });
+    }
+
+    // ── Rota rápida: menu de simulado ─────────────────────────────────────────
+    if (intent === 'menu_simulado') {
+      saveMessages(session_id, question, SIMULADO_MENU_RESPONSE);
+      return NextResponse.json({
+        answer: SIMULADO_MENU_RESPONSE,
+        sources_found: 0,
+        has_context: false,
+        chat_history_length: 1,
+        processing_time_ms: Date.now() - startTime,
+      });
+    }
+
+    // ── Rota rápida: informações da disciplina ───────────────────────────────
+    if (intent === 'menu_info') {
+      saveMessages(session_id, question, INFO_MENU_RESPONSE);
+      return NextResponse.json({
+        answer: INFO_MENU_RESPONSE,
+        sources_found: 0,
+        has_context: false,
+        chat_history_length: 1,
+        processing_time_ms: Date.now() - startTime,
+      });
+    }
+
     // ── Rota de conteúdo: RAG completo + Prompt Mestre do Gemini ──────────────
 
     let history: Array<{ role: string; content: string }> = [];
@@ -482,8 +559,8 @@ export async function POST(req: NextRequest) {
 
     // Se a pergunta for sobre informações do curso, reduzimos o threshold
     // para capturar dados do Plano de Ensino com similaridade mais baixa.
-    const isCourseQuery = /prof|horar|atend|cron|calend|nota|avali|plano|trabalho|conteudo|carga/i.test(question);
-    const threshold = isCourseQuery ? 0.30 : 0.45;
+    const isCourseQuery = /prof|horar|atend|cron|calend|nota|avali|plano|trabalho|conteudo|carga|disciplin|ementa|frequenc|moodle|email|contato|media|prova/i.test(question);
+    const threshold = isCourseQuery ? 0.25 : 0.35;
 
     // Recupera documentos com o threshold dinâmico
     let docs = await retrieveDocs(embedding, threshold);
@@ -499,6 +576,18 @@ export async function POST(req: NextRequest) {
         } as any,
         ...docs
       ];
+    }
+
+    // Se nenhum documento for encontrado no RAG, retorna a resposta padrão de fallback imediatamente
+    if (docs.length === 0) {
+      saveMessages(session_id, question, FALLBACK_RESPONSE);
+      return NextResponse.json({
+        answer: FALLBACK_RESPONSE,
+        sources_found: 0,
+        has_context: false,
+        chat_history_length: history.length + 2,
+        processing_time_ms: Date.now() - startTime,
+      });
     }
 
     // Gera a resposta com o prompt completo e sem cortes artificiais
