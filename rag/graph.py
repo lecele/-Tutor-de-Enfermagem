@@ -109,28 +109,88 @@ class GraphState(TypedDict):
 import re
 import unicodedata
 
-# Resposta padrão para quando NENHUM chunk relevante é encontrado.
-# NÃO usa LLM — é hardcoded para garantir precisão acadêmica.
+# Texto de recusa padrão para perguntas fora do escopo da disciplina.
 FALLBACK_RESPONSE = (
-    "Desculpe, o material de estudo disponível não contém informações suficientes "
-    "para responder a sua pergunta com precisão acadêmica.\n\n"
-    "Recomendo consultar:\n"
-    "- Seu professor orientador ou tutor da disciplina\n"
-    "- Biblioteca virtual da instituição\n"
-    "- Bases de dados científicas: **LILACS**, **BVS**, **PubMed**\n"
-    "- Publicações do **COFEN** (cofen.gov.br) e **Ministério da Saúde** (saude.gov.br)"
+    "Não posso responder a essa solicitação porque está fora do escopo da disciplina "
+    "ou das diretrizes éticas do assistente. Posso ajudar com temas relacionados à "
+    "disciplina **O cuidado no processo de viver humano II - a condição cirúrgica**.\n\n"
+    "Deseja voltar ao menu principal ou repetir a pergunta?"
 )
 
+# Mensagem inicial completa (primeira interação da sessão) — seção 7.1
 GREETING_WELCOME_RESPONSE = (
-    "Olá! Sou o seu **Tutor de Enfermagem** da plataforma **Agentes na Saúde** (Perioperatória - UFSC). 🩺\n\n"
-    "**MENU PRINCIPAL**\n\n"
-    "Escolha uma das opções:\n"
-    "1. **Resumo de Conteúdo**\n"
-    "2. **Simulado de Prova**\n"
-    "3. **Informações do Curso**\n"
-    "4. **Encerrar Sessão**\n\n"
-    "Digite o número ou o nome da opção desejada para começarmos!"
+    "Olá! Que bom ter você aqui no **Assistente de Estudos da INT 5224 – O cuidado "
+    "no processo de viver humano II: a condição cirúrgica** 🩺\n\n"
+    "Este espaço foi pensado para facilitar sua jornada de aprendizagem sobre o cuidado "
+    "no processo de viver humano em condição cirúrgica. Aqui você revisa conteúdos, "
+    "pratica com simulados e acessa informações essenciais da disciplina.\n\n"
+    "**Como usar:** Fale comigo como se estivesse conversando com um tutor. Peça "
+    "explicações, tire dúvidas ou escolha uma das opções abaixo.\n\n"
+    "**O que esperar:** Clareza, objetividade e apoio contínuo — sempre dentro dos "
+    "limites da disciplina.\n\n"
+    "**Opções:**\n"
+    "• Resumo de Conteúdo\n"
+    "• Simulado de Prova\n"
+    "• Informações da Disciplina\n"
+    "• Encerrar Sessão"
 )
+
+# Mensagem curta quando o usuário retorna ao menu na mesma sessão — seção 7.2
+MENU_RETURN_RESPONSE = (
+    "Você voltou ao menu principal.\n\n"
+    "Escolha uma opção ou envie uma pergunta livre relacionada à disciplina:\n"
+    "• Resumo de Conteúdo\n"
+    "• Simulado de Prova\n"
+    "• Informações da Disciplina\n"
+    "• Encerrar Sessão"
+)
+
+# Mensagem de encerramento de sessão — seção 11
+ENCERRAR_RESPONSE = (
+    "Sessão encerrada. Bons estudos! Estarei aqui sempre quando precisar. 👋"
+)
+
+
+def _is_encerrar_sessao(question: str) -> bool:
+    """
+    Detecta se o usuário quer encerrar a sessão.
+    Aceita: "encerrar sessão", "encerrar", "sair", "fechar", "terminar sessão", etc.
+    """
+    if not question:
+        return False
+    normalized = unicodedata.normalize("NFD", question).encode("ascii", "ignore").decode("utf-8")
+    normalized = normalized.lower().strip()
+    normalized = re.sub(r"[^\w\s]", " ", normalized)
+    encerrar_keywords = {
+        "sair", "fechar", "encerrar", "terminar", "fim", "tchau", "bye",
+        "encerrar sessao", "terminar sessao", "finalizar sessao",
+        "encerrar sessão", "terminar sessão", "finalizar sessão",
+        "fechar sessao", "fechar sessão"
+    }
+    for kw in encerrar_keywords:
+        if kw in normalized:
+            return True
+    return False
+
+
+def _is_menu_return(question: str) -> bool:
+    """
+    Detecta se o usuário quer voltar ao menu principal.
+    """
+    if not question:
+        return False
+    normalized = unicodedata.normalize("NFD", question).encode("ascii", "ignore").decode("utf-8")
+    normalized = normalized.lower().strip()
+    normalized = re.sub(r"[^\w\s]", " ", normalized)
+    menu_keywords = {
+        "menu", "voltar", "inicio", "home", "opcoes", "opções",
+        "menu principal", "voltar ao menu", "voltar pro menu",
+        "voltar para o menu", "pagina inicial"
+    }
+    for kw in menu_keywords:
+        if kw in normalized:
+            return True
+    return False
 
 
 def _is_greeting_or_courtesy(question: str) -> bool:
@@ -140,36 +200,23 @@ def _is_greeting_or_courtesy(question: str) -> bool:
     """
     if not question:
         return False
-        
-    # Remove acentos e converte para minúsculo
     normalized = unicodedata.normalize("NFD", question).encode("ascii", "ignore").decode("utf-8")
     normalized = normalized.lower().strip()
-    # Substitui pontuações comuns por espaços
     normalized = re.sub(r"[^\w\s]", " ", normalized)
-    # Divide em palavras
     words = [w.strip() for w in normalized.split() if w.strip()]
-    
     if not words:
         return False
-        
-    # Conjunto de palavras permitidas em saudações e cortesias puras
     greeting_words = {
-        "oi", "ola", "opa", "bom", "dia", "boa", "tarde", "noite", 
-        "tudo", "bem", "como", "vai", "você", "voce", "voces", "vocês",
+        "oi", "ola", "opa", "bom", "dia", "boa", "tarde", "noite",
+        "tudo", "bem", "como", "vai", "voce", "voces",
         "e", "ai", "hello", "hi", "salve", "tutor", "bot", "ia", "sistema",
         "quem", "o", "que", "faz", "pode", "fazer", "nome", "seu", "funciona",
-        "ajuda", "me", "pode", "ajudar", "estudar", "com", "ola!", "oi!",
-        "gentileza", "obrigado", "obrigada", "valeu", "grato", "grata"
+        "ajuda", "me", "ajudar", "estudar", "com",
+        "obrigado", "obrigada", "valeu", "grato", "grata"
     }
-    
-    # Se todas as palavras da mensagem estiverem no conjunto de palavras de saudação/cortesia,
-    # então é estritamente uma saudação/cortesia.
-    # Se houver pelo menos uma palavra fora desse conjunto (como "sutura", "choque", "pressao"),
-    # não é considerada apenas saudação e deve seguir o fluxo acadêmico do RAG.
     for word in words:
         if word not in greeting_words:
             return False
-            
     return True
 
 
@@ -450,45 +497,122 @@ async def grade_documents(state: GraphState) -> dict:
 
 async def generate(state: GraphState) -> dict:
     """
-    Nó 3a — GENERATE: Resposta fundamentada com contexto documental (assíncrono).
-
-    Ativado quando `grade_documents` encontrou chunks relevantes.
+    Nó 3a — GENERATE: Resposta fundamentada com contexto documental + Prompt Mestre (21Jul2026).
     """
     question = state["question"]
     documents = state["documents"]
     chat_history = state.get("chat_history", [])
+
+    # ── Detecção de comandos especiais (sem chamar o LLM) ──────────────────────
+    if _is_encerrar_sessao(question):
+        logger.info("crag_generate_encerrar_sessao", question=question[:80])
+        return {
+            "generation": ENCERRAR_RESPONSE,
+            "chat_history": [
+                {"role": "user",      "content": question},
+                {"role": "assistant", "content": ENCERRAR_RESPONSE},
+            ],
+        }
+
+    if _is_menu_return(question):
+        logger.info("crag_generate_menu_return", question=question[:80])
+        return {
+            "generation": MENU_RETURN_RESPONSE,
+            "chat_history": [
+                {"role": "user",      "content": question},
+                {"role": "assistant", "content": MENU_RETURN_RESPONSE},
+            ],
+        }
 
     logger.info("crag_generate_start", question=question[:80], context_docs=len(documents))
 
     # Formata contexto e histórico
     context = _format_context_with_sources(documents)
     history_text = _format_chat_history(chat_history)
-
     history_section = (
-        f"\n\n## Histórico da Conversa:\n{history_text}"
+        f"\n\n## Histórico da Conversa (últimos turnos):\n{history_text}"
         if history_text
         else ""
     )
 
     generation_prompt = ChatPromptTemplate.from_messages([
         SystemMessage(content=(
-            "Você é o **Tutor IA de Enfermagem**, um Assistente de Inteligência Artificial Generativa Educacional especializado em Enfermagem Perioperatória.\n"
-            "Seu propósito é apoiar estudantes, promovendo a aprendizagem personalizada, o pensamento crítico e a autonomia intelectual. Você não substitui o raciocínio do estudante e NUNCA fornece respostas prontas para avaliações, trabalhos ou provas.\n\n"
-            "## Princípios Éticos e Pedagógicos Obrigatórios:\n"
-            "- **Atuação pedagógica:** Atue como apoio, não substituto. Estimule o pensamento crítico e o raciocínio clínico.\n"
-            "- **Regras Pedagógicas Gerais:** Nunca entregue respostas prontas de imediato. Use o método socrático: faça perguntas direcionadas para guiar o estudante a raciocinar e descobrir a resposta correta por si mesmo.\n"
-            "- **Adaptação:** Adapte suas explicações ao nível do estudante (Iniciante: exemplos simples e analogias; Intermediário: aprofundamento conceitual; Avançado: cenários clínicos complexos).\n"
-            "- **Conteúdos Proibidos:** NÃO forneça diagnósticos, prescrições ou condutas clínicas. NÃO engaje em temas políticos, religiosos, sexuais ou ilegais.\n\n"
-            "## Estilo de Comunicação:\n"
-            "- Linguagem acadêmica, técnica e adequada à área da saúde, com clareza e rigor conceitual.\n"
-            "- Tom motivador, respeitoso e estimulador.\n"
-            "- Indique fontes confiáveis dos materiais fornecidos usando as citações numéricas [1], [2], etc.\n\n"
-            "## Diretrizes de Funcionamento:\n"
-            "1. Quando o estudante fizer uma pergunta, analise os materiais de estudo fornecidos abaixo para responder.\n"
-            "2. Formule a resposta de forma estruturada, com explicações claras e exemplos quando aplicável.\n"
-            "3. Termine sua resposta fazendo uma pergunta socrática personalizada para incentivar o estudante a refletir sobre o tema abordado ou aprofundar o assunto.\n"
-            "4. Se as informações nos materiais fornecidos forem insuficientes para responder, diga isso de forma transparente e oriente-o a buscar em fontes tradicionais (como bases LILACS, BVS, PubMed ou COFEN).\n\n"
-            f"## Materiais de Estudo Disponíveis:\n{context}\n"
+            "Você é um Assistente de Inteligência Artificial Generativa Educacional da disciplina de código "
+            "INT 5224 e nome **O cuidado no processo de viver humano II - a condição cirúrgica** da "
+            "Universidade Federal de Santa Catarina (UFSC).\n\n"
+            "Seu propósito é apoiar estudantes de graduação em enfermagem, promovendo aprendizagem "
+            "personalizada, pensamento crítico e autonomia intelectual. Você não substitui o raciocínio "
+            "do estudante e nunca fornece respostas prontas para avaliações, trabalhos ou provas.\n\n"
+            "## Princípios Éticos Obrigatórios\n"
+            "- Princípios da UNESCO para Ética da IA: centralidade humana; equidade, inclusão e "
+            "acessibilidade; transparência e explicabilidade; privacidade e proteção de dados; segurança "
+            "e bem-estar; promoção do pensamento crítico; uso responsável e pedagógico.\n"
+            "- Diretrizes da UNESCO para IA Generativa na Educação: evitar dependência excessiva; "
+            "estimular autonomia intelectual; garantir integridade acadêmica; evitar vieses e "
+            "discriminação; promover literacia digital e ética.\n"
+            "- Diretrizes do MEC (Brasil): evitar plágio e respostas completas para avaliações; atuar como "
+            "apoio, não substituto; promover ética, cidadania e responsabilidade profissional.\n\n"
+            "## Perfil dos Usuários\n"
+            "- Estudantes de graduação em enfermagem; níveis variados (iniciante, intermediário, avançado).\n"
+            "- Preferências: respostas concisas com opção de aprofundamento; indicação de fontes confiáveis.\n"
+            "- Formatos preferidos: Resumo; Simulados de Prova.\n\n"
+            "## Estilo de Comunicação\n"
+            "- Linguagem acadêmica e técnica adequada à área da saúde; tom motivador e respeitoso; "
+            "clareza e rigor conceitual.\n"
+            "- Respostas concisas, com opção de aprofundamento.\n"
+            "- Explicações por analogias, exemplos clínicos e cenários.\n"
+            "- Referências sempre listadas como tópicos no formato ABNT ao final da resposta.\n\n"
+            "## Guard Rails – Escopo e Segurança\n"
+            "Recusar educadamente solicitações que envolvam:\n"
+            "- Temas fora do escopo da disciplina; conteúdos não relacionados à enfermagem/saúde;\n"
+            "- Questões antiéticas, imorais, ilegais;\n"
+            "- Diagnósticos, prescrições ou condutas clínicas reais;\n"
+            "- Questões políticas, religiosas ou sexuais.\n"
+            "Texto de recusa padrão: 'Não posso responder a essa solicitação porque está fora do escopo "
+            "da disciplina ou das diretrizes éticas do assistente. Posso ajudar com temas relacionados à "
+            "disciplina O cuidado no processo de viver humano II - a condição cirúrgica. Deseja voltar "
+            "ao menu principal ou repetir a pergunta?'\n\n"
+            "## Regras para Referências (ABNT)\n"
+            "- Sempre usar ABNT NBR 6023.\n"
+            "- Extrair dados somente do conteúdo dos arquivos disponíveis na base de conhecimento (RAG).\n"
+            "- No corpo do texto: citações numéricas [1], [2], etc.\n"
+            "- Na seção de referências: lista itemizada em formato ABNT, SEM mencionar nomes de arquivos "
+            "da base de conhecimento.\n"
+            "- Nunca inventar autores, títulos ou datas. Se faltar informação, indicar 'não encontrado'.\n"
+            "- Formato: SOBRENOME, Prenomes. Título do documento. Ano. Seção consultada: página(s).\n\n"
+            "## Comportamento por Fluxo\n\n"
+            "### Fluxo: Resumo de Conteúdo\n"
+            "1. Se o tema for amplo, solicitar subtema com exemplos.\n"
+            "2. Estrutura do resumo: Explicação clara e concisa → Exemplos clínicos contextualizados → "
+            "Relação com práticas de enfermagem no perioperatório → Referências ABNT → Sugestões de estudo.\n"
+            "3. Após o resumo: perguntar se deseja aprofundar, escolher outro tema, voltar ao menu ou encerrar.\n\n"
+            "### Fluxo: Simulado de Prova\n"
+            "1. Criar 3 questões de múltipla escolha (níveis variados).\n"
+            "2. OBRIGATÓRIO: apresentar UMA questão por vez e AGUARDAR a resposta antes de prosseguir.\n"
+            "3. OBRIGATÓRIO: exibir as alternativas como LISTA ITEMIZADA (nunca em texto corrido):\n"
+            "   A) texto da alternativa\n"
+            "   B) texto da alternativa\n"
+            "   C) texto da alternativa\n"
+            "   D) texto da alternativa\n"
+            "4. Aceitar respostas: 'A', 'a', 'alternativa A', 'opção A'.\n"
+            "5. Se correta: confirmar e reforçar o conceito (1-2 frases).\n"
+            "6. Se incorreta: oferecer nova chance; se errar de novo, fornecer resposta correta com explicação breve.\n"
+            "7. Após as 3 questões: perguntar se deseja continuar, escolher outro tema, voltar ao menu ou encerrar.\n\n"
+            "### Fluxo: Informações da Disciplina\n"
+            "- Responder sobre conteúdo programático, calendário, formato de trabalhos, critérios de avaliação.\n"
+            "- Fonte obrigatória: plano de ensino disponível na base de conhecimentos (RAG).\n"
+            "- Se não disponível: recomendar consulta ao Moodle da disciplina.\n\n"
+            "## Comportamento Adaptativo\n"
+            "- Iniciante: exemplos simples e analogias.\n"
+            "- Intermediário: aprofundamento conceitual.\n"
+            "- Avançado: cenários clínicos complexos.\n"
+            "- Detectar nível automaticamente pelo vocabulário e estrutura das perguntas.\n\n"
+            "## Validação Universal de Entrada\n"
+            "- Em todas as etapas, verificar se o formato recebido é equivalente ao esperado.\n"
+            "- Se não for, pedir reentrada e fornecer 2-3 exemplos de entradas aceitáveis.\n"
+            "- Mensagem padrão: 'Não entendi sua entrada. Por favor, digite novamente. "
+            "Exemplos válidos: X, Y e Z'.\n\n"
+            f"## Materiais de Estudo Disponíveis (Base RAG):\n{context}\n"
             f"{history_section}"
         )),
         HumanMessage(content="{question}"),
@@ -502,21 +626,17 @@ async def generate(state: GraphState) -> dict:
 
     return {
         "generation": response,
-        # operator.add: ADICIONA este turno ao histórico acumulado no checkpoint
         "chat_history": [
             {"role": "user",      "content": question},
             {"role": "assistant", "content": response},
         ],
     }
+
+
 async def fallback_response(state: GraphState) -> dict:
     """
-    Nó 3b — FALLBACK: Resposta padrão quando nenhum chunk é relevante (assíncrono).
-
-    DESIGN DECISION — Por que hardcoded e não LLM:
-    - Evita alucinação: o LLM não inventa informações médicas/clínicas.
-    - Precisão acadêmica: respostas de saúde requerem fonte verificável.
-    - Consistência: todos os estudantes recebem a mesma orientação segura.
-    - Performance: sem custo de token para o fallback.
+    Nó 3b — FALLBACK: Resposta padrão quando nenhum chunk é relevante.
+    Sem LLM — hardcoded para evitar alucinação em contexto de saúde.
     """
     question = state["question"]
 
@@ -526,8 +646,13 @@ async def fallback_response(state: GraphState) -> dict:
         reason="Nenhum chunk relevante encontrado após avaliação CRAG.",
     )
 
-    # Se a pergunta for uma saudação ou cortesia, responde com as boas-vindas acolhedoras do Tutor
-    if _is_greeting_or_courtesy(question):
+    if _is_encerrar_sessao(question):
+        response_text = ENCERRAR_RESPONSE
+        logger.info("crag_fallback_encerrar", question=question[:80])
+    elif _is_menu_return(question):
+        response_text = MENU_RETURN_RESPONSE
+        logger.info("crag_fallback_menu_return", question=question[:80])
+    elif _is_greeting_or_courtesy(question):
         response_text = GREETING_WELCOME_RESPONSE
         logger.info("crag_fallback_greeting_welcome", question=question[:80])
     else:
@@ -535,7 +660,6 @@ async def fallback_response(state: GraphState) -> dict:
 
     return {
         "generation": response_text,
-        # Registra no histórico mesmo o fallback (para rastreabilidade)
         "chat_history": [
             {"role": "user",      "content": question},
             {"role": "assistant", "content": response_text},

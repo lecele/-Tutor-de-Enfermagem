@@ -45,6 +45,22 @@ test_supabase.py
 test_chat.py
 Prompt.pdf
 
+# Base de documentos (PDFs grandes — armazenados no Google Drive / Supabase)
+nova_base/
+
+# Scripts de scratch e exploração local
+scratch/
+scratch_*.py
+download_drive.py
+explore_drive.py
+extracted_prompt.txt
+update_vercel_env.ps1
+
+# PDFs de documentação enviados localmente
+"Manual Técnico - Tutor de Enfermagem.pdf"
+"Pedidos de alteração_July 19 2026.pdf"
+"Prompt 21Jul2026.pdf"
+
 # Logs
 *.log
 npm-debug.log*

@@ -1,33 +1,20 @@
 'use client';
 
-// components/chat/MessageInput.tsx — Input pill com botão de microfone
+// components/chat/MessageInput.tsx — Input pill sem botões de voz
 
 import { useState, useRef, useCallback, useEffect, KeyboardEvent } from 'react';
 import { Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 interface MessageInputProps {
   onSend: (message: string) => void;
   isLoading: boolean;
   disabled?: boolean;
-  isListening?: boolean;
-  isSpeaking?: boolean;
-  isMuted?: boolean;
-  onMicClick?: () => void;
-  onMuteClick?: () => void;
-  onStopSpeaking?: () => void;
 }
 
 export function MessageInput({
   onSend,
   isLoading,
   disabled,
-  isListening = false,
-  isSpeaking = false,
-  isMuted = false,
-  onMicClick,
-  onMuteClick,
-  onStopSpeaking,
 }: MessageInputProps) {
   const [value, setValue] = useState('');
   const [placeholder, setPlaceholder] = useState('Pergunte...');
@@ -105,82 +92,6 @@ export function MessageInput({
           style={{ maxHeight: '144px' }}
           autoComplete="off"
         />
-
-        {/* Botão de parar fala (aparece apenas quando está falando) */}
-        {isSpeaking && onStopSpeaking && (
-          <motion.button
-            type="button"
-            onClick={onStopSpeaking}
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            className="
-              flex items-center justify-center
-              w-10 h-10 md:w-11 md:h-11
-              rounded-2xl shrink-0 cursor-pointer
-              bg-amber-500 hover:bg-amber-600
-              text-white shadow-md transition-all active:scale-95
-            "
-            title="Parar leitura"
-          >
-            <span className="material-symbols-outlined text-[20px] select-none" style={{ fontVariationSettings: "'FILL' 1" }}>
-              volume_off
-            </span>
-          </motion.button>
-        )}
-
-        {/* Botão de Mudo/Sons */}
-        {onMuteClick && (
-          <button
-            type="button"
-            onClick={onMuteClick}
-            title={isMuted ? 'Ativar áudio' : 'Silenciar áudio'}
-            className={`
-              flex items-center justify-center
-              w-10 h-10 md:w-11 md:h-11
-              rounded-2xl shrink-0 cursor-pointer
-              shadow-md transition-all active:scale-95
-              tutor-gradient-border
-              ${isMuted
-                ? '[--tutor-border-bg:#b91c1c] hover:[--tutor-border-bg:#991b1b] text-red-200'
-                : '[--tutor-border-bg:#105ba3] hover:[--tutor-border-bg:#0d4a87] dark:[--tutor-border-bg:#0d3a6e] dark:hover:[--tutor-border-bg:#0a2a50] text-white'
-              }
-            `}
-          >
-            <span className="material-symbols-outlined text-[20px] md:text-[22px] select-none text-white" style={{ fontVariationSettings: isMuted ? "'FILL' 1" : "'FILL' 0" }}>
-              {isMuted ? 'volume_off' : 'volume_up'}
-            </span>
-          </button>
-        )}
-
-        {/* Botão de Microfone */}
-        {onMicClick && (
-          <button
-            type="button"
-            onClick={onMicClick}
-            disabled={isLoading || disabled}
-            title={isListening ? 'Parar gravação' : 'Falar com o Tutor'}
-            className={`
-              flex items-center justify-center
-              w-10 h-10 md:w-11 md:h-11
-              rounded-2xl shrink-0 cursor-pointer
-              shadow-md transition-all active:scale-95
-              disabled:opacity-40 disabled:cursor-not-allowed
-              tutor-gradient-border
-              ${isListening
-                ? '[--tutor-border-bg:#ef4444] hover:[--tutor-border-bg:#dc2626] animate-pulse text-white'
-                : '[--tutor-border-bg:#105ba3] hover:[--tutor-border-bg:#0d4a87] dark:[--tutor-border-bg:#0d3a6e] dark:hover:[--tutor-border-bg:#0a2a50] text-white'
-              }
-            `}
-          >
-            <span
-              className="material-symbols-outlined text-[20px] md:text-[22px] select-none text-white"
-              style={{ fontVariationSettings: isListening ? "'FILL' 1" : "'FILL' 0" }}
-            >
-              {isListening ? 'mic_off' : 'mic'}
-            </span>
-          </button>
-        )}
 
         {/* Botão Enviar */}
         <button
