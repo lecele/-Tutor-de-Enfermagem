@@ -160,10 +160,9 @@ function getGenAI() {
 // ── Embedding ─────────────────────────────────────────────────────────────────
 
 async function embedQuery(text: string): Promise<number[]> {
-  const model = getGenAI().getGenerativeModel({ model: 'gemini-embedding-2' });
+  const model = getGenAI().getGenerativeModel({ model: 'text-embedding-004' });
   const result = await model.embedContent({
     content: { role: 'user', parts: [{ text }] },
-    outputDimensionality: 768,
   } as any);
   return result.embedding.values;
 }
@@ -517,7 +516,8 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (err) {
-    console.error('[chat]', err);
-    return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 });
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error('[chat] Erro interno:', errMsg);
+    return NextResponse.json({ error: `Erro interno do servidor: ${errMsg}` }, { status: 500 });
   }
 }

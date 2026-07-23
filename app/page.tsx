@@ -71,13 +71,13 @@ export default function HomePage() {
             fixed top-2 left-2 right-2
             mt-[env(safe-area-inset-top)]
             md:relative md:top-auto md:left-auto md:right-auto
-            md:mx-8 md:mt-10 md:mb-4
-            px-4 sm:px-6 py-3
+            md:max-w-3xl md:mx-auto md:mt-6 md:mb-2
+            px-3 sm:px-5 py-2
             flex items-center justify-between
             z-50
             tutor-gradient-border
-            rounded-[1.5rem] md:rounded-[2rem]
-            shadow-[0_10px_20px_rgba(0,0,0,0.15)] dark:shadow-[0_15px_30px_rgba(0,0,0,0.5),0_0_20px_rgba(21,115,194,0.2)]
+            rounded-[1.25rem] md:rounded-[1.5rem]
+            shadow-[0_8px_16px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_24px_rgba(0,0,0,0.4),0_0_16px_rgba(21,115,194,0.15)]
             backdrop-blur-md shrink-0 transition-colors duration-300
           "
           style={{
@@ -86,14 +86,14 @@ export default function HomePage() {
               : 'linear-gradient(#1573C2, #1573C2)'
           } as React.CSSProperties}
         >
-          <div className="flex items-center gap-2 sm:gap-4 md:gap-5 flex-1 min-w-0">
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
             {/* Logo */}
-            <div className="flex items-center justify-center w-16 h-16 sm:w-[76px] sm:h-[76px] md:w-[110px] md:h-[110px] shrink-0 -my-3 sm:-my-4 md:-my-6 overflow-visible rounded-2xl transition-transform duration-300 hover:scale-105">
+            <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 shrink-0 overflow-visible rounded-xl transition-transform duration-300 hover:scale-105">
               <img src="/logo.png" alt="Logo Tutor" className="w-full h-full object-contain tutor-logo-premium" />
             </div>
 
             {/* Título */}
-            <h1 className="text-sm min-[360px]:text-base sm:text-xl md:text-3xl font-bold tracking-wide text-white dark:text-blue-50 whitespace-nowrap overflow-visible tutor-title-outline">
+            <h1 className="text-sm sm:text-base md:text-xl font-bold tracking-wide text-white dark:text-blue-50 whitespace-nowrap overflow-visible tutor-title-outline">
               Tutor de Enfermagem
             </h1>
           </div>
@@ -103,10 +103,10 @@ export default function HomePage() {
             <button
               onClick={startNewSession}
               className="
-                text-white p-1 md:p-2 rounded-xl md:rounded-2xl
+                text-white p-1 md:p-1.5 rounded-lg md:rounded-xl
                 tutor-gradient-border shadow-sm transition-all
                 flex items-center justify-center
-                w-7 h-7 sm:w-8 sm:h-8 md:w-12 md:h-12
+                w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9
                 cursor-pointer
                 [--tutor-border-bg:#105ba3]
                 hover:[--tutor-border-bg:#0d4a87]
@@ -115,15 +115,15 @@ export default function HomePage() {
               "
               title="Nova Conversa"
             >
-              <span className="material-symbols-outlined text-[16px] sm:text-[18px] md:text-[24px]">cleaning_services</span>
+              <span className="material-symbols-outlined text-[16px] md:text-[18px]">cleaning_services</span>
             </button>
             <button
               onClick={toggleTheme}
               className="
-                text-white p-1 md:p-2 rounded-xl md:rounded-2xl
+                text-white p-1 md:p-1.5 rounded-lg md:rounded-xl
                 tutor-gradient-border shadow-sm transition-all
                 flex items-center justify-center
-                w-7 h-7 sm:w-8 sm:h-8 md:w-12 md:h-12
+                w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9
                 cursor-pointer
                 [--tutor-border-bg:#105ba3]
                 hover:[--tutor-border-bg:#0d4a87]
@@ -132,7 +132,7 @@ export default function HomePage() {
               "
               title="Alternar Tema"
             >
-              <span className="material-symbols-outlined text-[16px] sm:text-[18px] md:text-[24px]">
+              <span className="material-symbols-outlined text-[16px] md:text-[18px]">
                 {darkMode ? 'light_mode' : 'dark_mode'}
               </span>
             </button>
@@ -140,7 +140,7 @@ export default function HomePage() {
         </header>
 
         {/* ── Mensagens ─────────────────────────────────────────────────────────── */}
-        <section className="flex-1 overflow-y-auto px-3 py-4 md:px-12 md:py-8 scroll-smooth z-10 w-full max-w-4xl mx-auto flex flex-col gap-4 md:gap-6 pt-24 mt-[env(safe-area-inset-top)] md:mt-0 md:pt-2 relative">
+        <section className="flex-1 overflow-y-auto px-3 py-2 md:px-8 md:py-4 scroll-smooth z-10 w-full max-w-3xl mx-auto flex flex-col gap-3 pt-16 mt-[env(safe-area-inset-top)] md:mt-0 md:pt-2 relative">
           <div className="relative z-10 w-full flex flex-col gap-4">
             {isEmpty ? (
               <WelcomeMenu onSelect={sendMessage} />
@@ -212,32 +212,32 @@ function WelcomeMenu({ onSelect }: { onSelect: (text: string) => void }) {
   ];
 
   return (
-    <div className="flex flex-col items-center justify-start text-center px-2 md:px-6 mt-2 md:mt-4 relative z-10 w-full gap-4 md:gap-6">
+    <div className="flex flex-col items-center justify-start text-center px-2 md:px-4 mt-1 md:mt-2 relative z-10 w-full gap-3 md:gap-4">
       {/* Ícone e título */}
-      <div className="flex flex-col items-center gap-2">
-        <span className="material-symbols-outlined text-[40px] md:text-[56px] text-[#1573C2] dark:text-blue-300 drop-shadow-md" style={{ fontVariationSettings: "'FILL' 1" }}>
+      <div className="flex flex-col items-center gap-1.5">
+        <span className="material-symbols-outlined text-[36px] md:text-[48px] text-[#1573C2] dark:text-blue-300 drop-shadow-md" style={{ fontVariationSettings: "'FILL' 1" }}>
           medical_information
         </span>
-        <h2 className="text-base md:text-xl font-bold text-[#1573C2] dark:text-white leading-tight max-w-lg">
+        <h2 className="text-sm md:text-lg font-bold text-[#1573C2] dark:text-white leading-tight max-w-lg">
           Bem-vindo(a) ao Assistente de Estudos da INT 5224
         </h2>
-        <p className="text-xs md:text-sm text-gray-500 dark:text-blue-200/70 max-w-md">
+        <p className="text-[11px] md:text-sm text-gray-500 dark:text-blue-200/70 max-w-md">
           O cuidado no processo de viver humano II – a condição cirúrgica · UFSC
         </p>
-        <p className="text-xs md:text-sm text-gray-400 dark:text-blue-200/50 max-w-sm mt-1">
+        <p className="text-[11px] md:text-xs text-gray-400 dark:text-blue-200/50 max-w-sm">
           Escolha uma opção abaixo ou envie uma pergunta diretamente no chat.
         </p>
       </div>
 
       {/* Botões do menu */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 w-full max-w-xl">
         {options.map((opt) => (
           <button
             key={opt.label}
             onClick={() => onSelect(opt.label)}
             className="
               flex items-start gap-3 text-left
-              rounded-2xl px-4 py-3 md:px-5 md:py-4
+              rounded-xl px-3 py-2.5 md:px-4 md:py-3
               tutor-gradient-border
               [--tutor-border-bg:#1573C2]
               dark:[--tutor-border-bg:#0D3A6E]
@@ -251,14 +251,14 @@ function WelcomeMenu({ onSelect }: { onSelect: (text: string) => void }) {
             "
           >
             <span
-              className="material-symbols-outlined text-[22px] md:text-[26px] text-white shrink-0 mt-0.5 transition-transform duration-200 group-hover:scale-110"
+              className="material-symbols-outlined text-[20px] md:text-[22px] text-white shrink-0 mt-0.5 transition-transform duration-200 group-hover:scale-110"
               style={{ fontVariationSettings: "'FILL' 1" }}
             >
               {opt.icon}
             </span>
             <div className="flex flex-col gap-0.5 min-w-0">
-              <span className="text-sm md:text-base font-semibold text-white leading-tight">{opt.label}</span>
-              <span className="text-[11px] md:text-xs text-white/70 leading-snug">{opt.description}</span>
+              <span className="text-xs md:text-sm font-semibold text-white leading-tight">{opt.label}</span>
+              <span className="text-[10px] md:text-[11px] text-white/70 leading-snug">{opt.description}</span>
             </div>
           </button>
         ))}
