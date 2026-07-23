@@ -420,9 +420,9 @@ async function generateResponse(
   history: Array<{ role: string; content: string }>
 ): Promise<string> {
   const model = getGenAI().getGenerativeModel({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.1-pro-preview',
     generationConfig: {
-      temperature: 0.2, // Mantém respostas consistentes e fiéis ao contexto
+      temperature: 0.3, // Temperatura de 0.3 exigida pelo usuário
     },
   });
 
