@@ -2,7 +2,7 @@
 
 // app/page.tsx — Layout principal sem voz e sem sidebar
 
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useChat } from '@/hooks/useChat';
 import { MessageInput } from '@/components/chat/MessageInput';
 import { MessageBubble } from '@/components/chat/MessageBubble';
@@ -51,9 +51,7 @@ export default function HomePage() {
 
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#f6fbfa] dark:bg-[#020b18] transition-colors duration-300">
-
-      {/* ── Área principal ───────────────────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#f6fbfa] dark:bg-[#020b18] relative transition-colors duration-300">
+      <main className="flex-1 flex flex-col overflow-hidden relative">
 
         {/* Blob de fundo sutil */}
         <div className="absolute inset-x-0 -top-40 -z-10 overflow-hidden blur-3xl pointer-events-none" aria-hidden>
@@ -65,102 +63,103 @@ export default function HomePage() {
           <img src="/logo.png" alt="Watermark" className="w-[80%] md:w-[450px] object-contain" />
         </div>
 
-        {/* ── Header — mesmo tamanho que a barra de baixo ──────────────────────── */}
-        <header
-          className="
-            fixed top-2 left-2 right-2
-            mt-[env(safe-area-inset-top)]
-            md:relative md:top-auto md:left-auto md:right-auto
-            md:max-w-[45rem] md:mx-auto md:mt-4 md:mb-2
-            p-2 md:p-2 pl-3 md:pl-4
-            flex items-center justify-between gap-2
-            z-50
-            tutor-gradient-border
-            rounded-[2rem]
-            shadow-[0_10px_20px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_20px_rgba(0,0,0,0.4)]
-            backdrop-blur-md shrink-0 transition-colors duration-300
-          "
-          style={{
-            '--tutor-border-bg-img': darkMode
-              ? 'linear-gradient(to right, rgba(21, 115, 194, 0.95), rgba(13, 74, 135, 0.95))'
-              : 'linear-gradient(#1573C2, #1573C2)'
-          } as React.CSSProperties}
-        >
-          {/* Logo + Título */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-            <div className="flex items-center justify-center w-16 h-16 md:w-[4.5rem] md:h-[4.5rem] shrink-0 rounded-2xl transition-transform duration-300 hover:scale-105">
-              <img src="/logo.png" alt="Logo Tutor" className="w-full h-full object-contain tutor-logo-premium" />
-            </div>
-            <h1 className="text-base sm:text-lg md:text-xl font-bold tracking-wide text-white dark:text-blue-50 whitespace-nowrap tutor-title-outline">
-              Tutor de Enfermagem
-            </h1>
-          </div>
+        {/* ── Container central compartilhado (header + messages + footer) ──────── */}
+        <div className="flex flex-col h-full w-full max-w-3xl mx-auto">
 
-          {/* Botão tema — mesmo estilo dos botões da barra de baixo */}
-          <button
-            onClick={toggleTheme}
-            className="
-              text-white rounded-2xl md:rounded-[1.2rem]
-              tutor-gradient-border shadow-md transition-all active:scale-95
-              flex items-center justify-center
-              w-9 h-9 md:w-11 md:h-11
-              cursor-pointer shrink-0
-              [--tutor-border-bg:#0d4a87]
-              hover:[--tutor-border-bg:#0a3a6b]
-              dark:[--tutor-border-bg:#0d3a6e]
-              dark:hover:[--tutor-border-bg:#0a2a50]
-            "
-            title="Alternar Tema"
-          >
-            <span className="material-symbols-outlined text-[18px] md:text-[22px] select-none">
-              {darkMode ? 'light_mode' : 'dark_mode'}
-            </span>
-          </button>
-        </header>
+          {/* ── Header — mesmo wrapper e largura que a barra de baixo ────────────── */}
+          <div className="shrink-0 px-2 pt-2 md:px-6 md:pt-4 z-50"
+            style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}>
+            <div
+              className="
+                w-full
+                p-1 md:p-2 pl-2 md:pl-3
+                flex items-center justify-between gap-2
+                tutor-gradient-border
+                rounded-[2rem]
+                shadow-[0_10px_20px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_20px_rgba(0,0,0,0.4)]
+                backdrop-blur-md transition-colors duration-300
+              "
+              style={{
+                '--tutor-border-bg-img': darkMode
+                  ? 'linear-gradient(to right, rgba(21, 115, 194, 0.95), rgba(13, 74, 135, 0.95))'
+                  : 'linear-gradient(#1573C2, #1573C2)'
+              } as React.CSSProperties}
+            >
+              {/* Logo + Título */}
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <div className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 shrink-0 rounded-2xl transition-transform duration-300 hover:scale-105">
+                  <img src="/logo.png" alt="Logo Tutor" className="w-full h-full object-contain tutor-logo-premium" />
+                </div>
+                <h1 className="text-base sm:text-lg md:text-xl font-bold tracking-wide text-white dark:text-blue-50 whitespace-nowrap tutor-title-outline">
+                  Tutor de Enfermagem
+                </h1>
+              </div>
 
-        {/* ── Mensagens ─────────────────────────────────────────────────────────── */}
-        <section className="flex-1 overflow-y-auto px-3 py-2 md:px-8 md:py-4 scroll-smooth z-10 w-full max-w-3xl mx-auto flex flex-col gap-3 pt-[5.75rem] mt-[env(safe-area-inset-top)] md:mt-0 md:pt-2 relative">
-          <div className="relative z-10 w-full flex flex-col gap-4">
-            {isEmpty ? (
-              <WelcomeMenu onSelect={sendMessage} />
-            ) : (
-              <>
-                {messages.map((msg, i) => (
-                  <MessageBubble key={msg.id} message={msg} index={i} />
-                ))}
-                <AnimatePresence>
-                  {isLoading && <TypingIndicator key="typing" />}
-                </AnimatePresence>
-              </>
-            )}
-            <div ref={messagesEndRef} className="h-4" />
-          </div>
-        </section>
-
-        {/* ── Banner de erro ─────────────────────────────────────────────────── */}
-        {error && (
-          <div className="mx-auto max-w-3xl w-full px-4 md:px-8 mb-2">
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-red-900 bg-red-950/20 px-4 py-2.5">
-              <p className="text-xs font-semibold text-red-400">{error}</p>
-              <button onClick={clearError} className="text-xs font-bold text-red-400 hover:text-red-300 cursor-pointer">
-                Fechar
+              {/* Botão tema — pequeno e discreto */}
+              <button
+                onClick={toggleTheme}
+                className="
+                  text-white/90 hover:text-white
+                  flex items-center justify-center
+                  w-8 h-8 md:w-9 md:h-9
+                  rounded-full
+                  bg-white/10 hover:bg-white/20
+                  transition-all active:scale-90
+                  cursor-pointer shrink-0
+                "
+                title="Alternar Tema"
+              >
+                <span className="material-symbols-outlined text-[18px] md:text-[20px] select-none">
+                  {darkMode ? 'light_mode' : 'dark_mode'}
+                </span>
               </button>
             </div>
           </div>
-        )}
 
-        {/* ── Footer com input ─────────────────────────────────────────────────── */}
-        <footer
-          className="px-2 pt-2 pb-4 md:p-6 w-full max-w-3xl mx-auto z-10 mt-auto flex flex-col gap-2 shrink-0"
-          style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
-        >
-          <MessageInput
-            onSend={sendMessage}
-            onNewSession={startNewSession}
-            isLoading={isLoading}
-            disabled={isBackendOnline === false}
-          />
-        </footer>
+          {/* ── Mensagens ──────────────────────────────────────────────────────────── */}
+          <section className="flex-1 overflow-y-auto px-2 py-2 md:px-6 md:py-4 scroll-smooth z-10 relative">
+            <div className="relative z-10 w-full flex flex-col gap-4">
+              {isEmpty ? (
+                <WelcomeMenu onSelect={sendMessage} />
+              ) : (
+                <>
+                  {messages.map((msg, i) => (
+                    <MessageBubble key={msg.id} message={msg} index={i} />
+                  ))}
+                  <AnimatePresence>
+                    {isLoading && <TypingIndicator key="typing" />}
+                  </AnimatePresence>
+                </>
+              )}
+              <div ref={messagesEndRef} className="h-4" />
+            </div>
+          </section>
+
+          {/* ── Banner de erro ─────────────────────────────────────────────────── */}
+          {error && (
+            <div className="px-2 md:px-6 mb-2">
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-red-900 bg-red-950/20 px-4 py-2.5">
+                <p className="text-xs font-semibold text-red-400">{error}</p>
+                <button onClick={clearError} className="text-xs font-bold text-red-400 hover:text-red-300 cursor-pointer">
+                  Fechar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Footer com input — mesma largura que o header ─────────────────────── */}
+          <footer
+            className="shrink-0 px-2 pt-2 pb-4 md:px-6 md:pt-2 md:pb-6"
+            style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+          >
+            <MessageInput
+              onSend={sendMessage}
+              onNewSession={startNewSession}
+              isLoading={isLoading}
+              disabled={isBackendOnline === false}
+            />
+          </footer>
+        </div>
       </main>
     </div>
   );
@@ -192,7 +191,7 @@ function WelcomeMenu({ onSelect }: { onSelect: (text: string) => void }) {
   ];
 
   return (
-    <div className="flex flex-col items-center justify-start text-center px-2 md:px-4 mt-1 md:mt-2 relative z-10 w-full gap-3 md:gap-4">
+    <div className="flex flex-col items-center justify-start text-center px-1 mt-2 relative z-10 w-full gap-3 md:gap-4">
       {/* Ícone e título */}
       <div className="flex flex-col items-center gap-1.5">
         <span className="material-symbols-outlined text-[36px] md:text-[48px] text-[#1573C2] dark:text-blue-300 drop-shadow-md" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -210,7 +209,7 @@ function WelcomeMenu({ onSelect }: { onSelect: (text: string) => void }) {
       </div>
 
       {/* Botões do menu */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 w-full max-w-xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 w-full">
         {options.map((opt) => (
           <button
             key={opt.label}
