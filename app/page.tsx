@@ -65,15 +65,15 @@ export default function HomePage() {
           <img src="/logo.png" alt="Watermark" className="w-[80%] md:w-[450px] object-contain" />
         </div>
 
-        {/* ── Header ──────────────────────────────────────────────────────────── */}
+        {/* ── Header — mesmo tamanho que a barra de baixo ──────────────────────── */}
         <header
           className="
             fixed top-2 left-2 right-2
             mt-[env(safe-area-inset-top)]
             md:relative md:top-auto md:left-auto md:right-auto
             md:max-w-3xl md:mx-auto md:mt-4 md:mb-2
-            p-1 md:p-2 pl-3 md:pl-4
-            flex items-center justify-between
+            p-1 md:p-2 pl-2 md:pl-3
+            flex items-center justify-between gap-2
             z-50
             tutor-gradient-border
             rounded-[2rem]
@@ -86,44 +86,40 @@ export default function HomePage() {
               : 'linear-gradient(#1573C2, #1573C2)'
           } as React.CSSProperties}
         >
+          {/* Logo + Título */}
           <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-            {/* Logo */}
-            <div className="flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 shrink-0 overflow-visible rounded-xl transition-transform duration-300 hover:scale-105">
+            <div className="flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 shrink-0 rounded-xl transition-transform duration-300 hover:scale-105">
               <img src="/logo.png" alt="Logo Tutor" className="w-full h-full object-contain tutor-logo-premium" />
             </div>
-
-            {/* Título */}
-            <h1 className="text-sm sm:text-base md:text-lg font-bold tracking-wide text-white dark:text-blue-50 whitespace-nowrap overflow-visible tutor-title-outline">
+            <h1 className="text-base sm:text-lg md:text-xl font-bold tracking-wide text-white dark:text-blue-50 whitespace-nowrap tutor-title-outline">
               Tutor de Enfermagem
             </h1>
           </div>
 
-          {/* Ações */}
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={toggleTheme}
-              className="
-                text-white rounded-2xl md:rounded-[1.2rem]
-                tutor-gradient-border shadow-md transition-all active:scale-95
-                flex items-center justify-center
-                w-11 h-11 md:w-14 md:h-14
-                cursor-pointer shrink-0
-                [--tutor-border-bg:#0d4a87]
-                hover:[--tutor-border-bg:#0a3a6b]
-                dark:[--tutor-border-bg:#0d3a6e]
-                dark:hover:[--tutor-border-bg:#0a2a50]
-              "
-              title="Alternar Tema"
-            >
-              <span className="material-symbols-outlined text-[20px] md:text-[24px]">
-                {darkMode ? 'light_mode' : 'dark_mode'}
-              </span>
-            </button>
-          </div>
+          {/* Botão tema — mesmo estilo dos botões da barra de baixo */}
+          <button
+            onClick={toggleTheme}
+            className="
+              text-white rounded-2xl md:rounded-[1.2rem]
+              tutor-gradient-border shadow-md transition-all active:scale-95
+              flex items-center justify-center
+              w-11 h-11 md:w-14 md:h-14
+              cursor-pointer shrink-0
+              [--tutor-border-bg:#0d4a87]
+              hover:[--tutor-border-bg:#0a3a6b]
+              dark:[--tutor-border-bg:#0d3a6e]
+              dark:hover:[--tutor-border-bg:#0a2a50]
+            "
+            title="Alternar Tema"
+          >
+            <span className="material-symbols-outlined text-[22px] md:text-[26px] select-none">
+              {darkMode ? 'light_mode' : 'dark_mode'}
+            </span>
+          </button>
         </header>
 
         {/* ── Mensagens ─────────────────────────────────────────────────────────── */}
-        <section className="flex-1 overflow-y-auto px-3 py-2 md:px-8 md:py-4 scroll-smooth z-10 w-full max-w-3xl mx-auto flex flex-col gap-3 pt-16 mt-[env(safe-area-inset-top)] md:mt-0 md:pt-2 relative">
+        <section className="flex-1 overflow-y-auto px-3 py-2 md:px-8 md:py-4 scroll-smooth z-10 w-full max-w-3xl mx-auto flex flex-col gap-3 pt-[3.75rem] mt-[env(safe-area-inset-top)] md:mt-0 md:pt-2 relative">
           <div className="relative z-10 w-full flex flex-col gap-4">
             {isEmpty ? (
               <WelcomeMenu onSelect={sendMessage} />

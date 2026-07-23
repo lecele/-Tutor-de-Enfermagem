@@ -1,6 +1,6 @@
 'use client';
 
-// components/chat/MessageInput.tsx — Input pill sem botões de voz
+// components/chat/MessageInput.tsx — Input pill: [input | enviar | limpar]
 
 import { useState, useRef, useCallback, useEffect, KeyboardEvent } from 'react';
 import { Loader2 } from 'lucide-react';
@@ -59,6 +59,19 @@ export function MessageInput({
     el.style.height = `${Math.min(el.scrollHeight, 144)}px`;
   }, []);
 
+  // Classes compartilhadas para os dois botões (enviar e limpar)
+  const btnBase = `
+    flex items-center justify-center shrink-0
+    w-11 h-11 md:w-14 md:h-14
+    rounded-2xl md:rounded-[1.2rem]
+    shadow-md transition-all active:scale-95
+    tutor-gradient-border text-white
+    [--tutor-border-bg:#0d4a87]
+    hover:[--tutor-border-bg:#0a3a6b]
+    dark:[--tutor-border-bg:#0d3a6e]
+    dark:hover:[--tutor-border-bg:#0a2a50]
+  `;
+
   return (
     <form
       id="chat-form"
@@ -68,7 +81,7 @@ export function MessageInput({
       {/* Pill container */}
       <div className="
         flex items-center gap-2
-        rounded-[2rem] p-1 md:p-2 pl-2 md:pl-2
+        rounded-[2rem] p-1 md:p-2 pl-4 md:pl-6
         shadow-[0_10px_20px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_20px_rgba(0,0,0,0.4)]
         focus-within:shadow-[0_0_20px_rgba(21,115,194,0.3)]
         transition-all
@@ -76,32 +89,6 @@ export function MessageInput({
         [--tutor-border-bg:#1573C2]
         dark:[--tutor-border-bg:#0D3A6E]
       ">
-        
-        {/* Botão Limpar Conversa */}
-        <button
-          type="button"
-          onClick={onNewSession}
-          disabled={isLoading}
-          className="
-            flex items-center justify-center shrink-0
-            w-11 h-11 md:w-14 md:h-14
-            rounded-2xl md:rounded-[1.2rem]
-            shadow-md transition-all active:scale-95
-            tutor-gradient-border
-            text-white cursor-pointer
-            [--tutor-border-bg:#0d4a87]
-            hover:[--tutor-border-bg:#0a3a6b]
-            dark:[--tutor-border-bg:#0d4a6e]
-            dark:hover:[--tutor-border-bg:#0a2a50]
-            disabled:opacity-50 disabled:cursor-not-allowed
-          "
-          title="Nova Conversa"
-        >
-          <span className="material-symbols-outlined text-[22px] md:text-[26px] select-none">
-            cleaning_services
-          </span>
-        </button>
-
         {/* Input / Textarea */}
         <textarea
           ref={textareaRef}
@@ -115,7 +102,7 @@ export function MessageInput({
             w-full bg-transparent border-none focus:outline-none
             text-white placeholder-white/70 dark:placeholder-white/50
             font-medium text-sm sm:text-base
-            py-2 md:py-3 px-1 resize-none disabled:opacity-50
+            py-2 md:py-3 resize-none disabled:opacity-50
           "
           style={{ maxHeight: '144px' }}
           autoComplete="off"
@@ -125,17 +112,8 @@ export function MessageInput({
         <button
           type="submit"
           disabled={!canSend}
-          className={`
-            flex items-center justify-center
-            w-11 h-11 md:w-14 md:h-14
-            rounded-2xl md:rounded-[1.2rem]
-            shadow-md transition-all active:scale-95 shrink-0
-            tutor-gradient-border
-            ${canSend
-              ? 'text-white cursor-pointer [--tutor-border-bg:#0d4a87] hover:[--tutor-border-bg:#0a3a6b]'
-              : 'text-white/40 cursor-not-allowed [--tutor-border-bg:#0d4a87] opacity-50'
-            }
-          `}
+          className={`${btnBase} ${canSend ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
+          title="Enviar"
         >
           {isLoading ? (
             <Loader2 className="h-5 w-5 animate-spin text-white" />
@@ -144,6 +122,19 @@ export function MessageInput({
               send
             </span>
           )}
+        </button>
+
+        {/* Botão Limpar Conversa — mesma cor, à direita do enviar */}
+        <button
+          type="button"
+          onClick={onNewSession}
+          disabled={isLoading}
+          className={`${btnBase} ${isLoading ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+          title="Nova Conversa"
+        >
+          <span className="material-symbols-outlined text-[22px] md:text-[26px] select-none">
+            cleaning_services
+          </span>
         </button>
       </div>
     </form>
