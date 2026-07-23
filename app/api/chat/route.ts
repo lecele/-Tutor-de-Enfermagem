@@ -419,19 +419,17 @@ async function generateResponse(
   docs: Document[],
   history: Array<{ role: string; content: string }>
 ): Promise<string> {
+  const systemPrompt = buildSystemPrompt(formatContext(docs), formatHistory(history));
+
   const model = getGenAI().getGenerativeModel({
-    model: 'gemini-3.1-pro-preview',
+    model: 'gemini-3.6-flash',
+    systemInstruction: systemPrompt,
     generationConfig: {
-      temperature: 0.3, // Temperatura de 0.3 exigida pelo usuário
+      temperature: 0.3,
     },
   });
 
-  const systemPrompt = buildSystemPrompt(formatContext(docs), formatHistory(history));
-
-  const result = await model.generateContent([
-    { text: systemPrompt },
-    { text: `Estudante: ${question}` },
-  ]);
+  const result = await model.generateContent(`Estudante: ${question}`);
 
   return result.response.text();
 }
