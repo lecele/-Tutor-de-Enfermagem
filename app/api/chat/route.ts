@@ -12,22 +12,21 @@ export const maxDuration = 60;
 
 const GREETING_RESPONSE =
   'Olá! Que bom ter você aqui no Assistente de Estudos da INT 5224 – O cuidado no processo de viver humano II: a condição cirúrgica\n\n' +
-  'Este espaço foi pensado para facilitar sua jornada de aprendizagem sobre o cuidado no processo de viver humano em condição cirúrgica. Aqui você revisa conteúdos, prática com simulados e acessa informações essenciais da disciplina.\n\n' +
+  'Este espaço foi pensado para facilitar sua jornada de aprendizagem sobre o cuidado no processo de viver humano em condição cirúrgica. Aqui você revisa conteúdos, pratica com simulados e acessa informações essenciais da disciplina.\n\n' +
   'Como usar: Fale comigo como se estivesse conversando com um tutor. Peça explicações, tire dúvidas ou escolha uma das opções abaixo.\n\n' +
-  'O que esperar: Clareza, objetividade e apoio contínuo — sempre dentro dos limites da disciplina.\n\n' +
-  'Opções:\n' +
-  '• Resumo de Conteúdo\n' +
-  '• Simulado de Prova\n' +
-  '• Informações da Disciplina\n' +
-  '• Encerrar Sessão';
+  'Opções:\n\n' +
+  '- Resumo de Conteúdo\n' +
+  '- Simulado de Prova\n' +
+  '- Informações da Disciplina\n' +
+  '- Encerrar Sessão';
 
 const MENU_RETURN_RESPONSE =
   'Você voltou ao menu principal.\n\n' +
-  'Escolha uma opção ou envie uma pergunta livre relacionada à disciplina:\n' +
-  '• Resumo de Conteúdo\n' +
-  '• Simulado de Prova\n' +
-  '• Informações da Disciplina\n' +
-  '• Encerrar Sessão';
+  'Escolha uma opção ou envie uma pergunta livre relacionada à disciplina:\n\n' +
+  '- Resumo de Conteúdo\n' +
+  '- Simulado de Prova\n' +
+  '- Informações da Disciplina\n' +
+  '- Encerrar Sessão';
 
 const FAREWELL_RESPONSE =
   'Sessão encerrada. Bons estudos! Estarei aqui sempre quando precisar.';
@@ -419,14 +418,20 @@ async function generateResponse(
   if (sessionMode === 'simulado') {
     modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO SIMULADO ATIVO]
 O estudante acabou de informar o tema "${question}" para o simulado.
-Você DEVE gerar a PRIMEIRA das 3 questões de múltipla escolha sobre este tema, com 4 alternativas (A, B, C, D), apenas UMA correta.
-NÃO gere um resumo ou explicação. Gere SOMENTE a questão no formato:
-Questão 1: [enunciado da questão]
-A) [alternativa]
-B) [alternativa]
-C) [alternativa]
-D) [alternativa]
-Aguarde a resposta do estudante antes de apresentar a próxima questão.`;
+Você DEVE gerar a PRIMEIRA das 3 questões de múltipla escolha sobre este tema.
+
+REGRAS ABSOLUTAS PARA O SIMULADO:
+1. CADA ALTERNATIVA OBRIGATORIAMENTE EM UMA LINHA SEPARADA:
+   Questão 1: [enunciado claro e completo]
+   A) [texto da alternativa A]
+   B) [texto da alternativa B]
+   C) [texto da alternativa C]
+   D) [texto da alternativa D]
+2. NUNCA coloque as alternativas na mesma linha (ex: ERRADO: "A) X B) Y C) Z D) W")
+3. NUNCA inclua seção de Referências nas perguntas do simulado
+4. Apresente UMA questão por vez e aguarde a resposta
+5. Quando o estudante errar: diga qual alternativa é a correta, explique BREVEMENTE (1-2 frases) e avance para a PRÓXIMA questão (não repita a questão errada)
+6. NÃO gere resumo ou explicação — apenas a questão formatada`;
   } else if (sessionMode === 'resumo') {
     modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO RESUMO ATIVO]
 O estudante solicitou um resumo sobre "${question}".

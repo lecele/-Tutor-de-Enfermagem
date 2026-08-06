@@ -188,6 +188,11 @@ function AgentBubble({ content, sourcesFound, hasContext }: {
         </li>
       );
     },
+    // Renderiza links como texto simples — referências ABNT não devem ser clicáveis
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    a: ({ children }: any) => (
+      <span className="text-slate-700 dark:text-slate-200">{children}</span>
+    ),
     // Remove bullets da ol/ul quando são opções
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ol: ({ children, ...props }: any) => {
@@ -211,7 +216,7 @@ function AgentBubble({ content, sourcesFound, hasContext }: {
         prose-code:rounded prose-code:bg-slate-100 dark:prose-code:bg-slate-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[#1573C2] dark:prose-code:text-blue-300 prose-code:text-[11px]
         prose-li:text-slate-600 dark:prose-li:text-slate-300
         prose-p:leading-relaxed prose-p:text-[13.5px]
-        prose-a:text-[#1573C2] prose-a:font-semibold prose-a:underline
+        prose-a:text-slate-700 dark:prose-a:text-slate-200 prose-a:no-underline prose-a:font-normal prose-a:cursor-text
         prose-blockquote:border-l-[#1573C2] prose-blockquote:bg-blue-50 dark:prose-blockquote:bg-blue-950/20 prose-blockquote:px-4 prose-blockquote:py-1 prose-blockquote:rounded-r-lg
       ">
         <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
