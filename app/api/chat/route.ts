@@ -401,7 +401,7 @@ async function generateResponse(
   question: string,
   docs: Document[],
   history: Array<{ role: string; content: string }>,
-  sessionMode: 'simulado' | 'resumo' | 'info' | 'livre' = 'livre'
+  sessionMode: 'simulado_tema' | 'simulado_respondendo' | 'resumo' | 'info' | 'livre' = 'livre'
 ): Promise<string> {
   const systemPrompt = buildSystemPrompt(formatContext(docs), formatHistory(history));
 
@@ -415,23 +415,46 @@ async function generateResponse(
 
   // Injeta instrução de contexto de sessão para garantir o modo correto
   let modeInstruction = '';
-  if (sessionMode === 'simulado') {
-    modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO SIMULADO ATIVO]
-O estudante acabou de informar o tema "${question}" para o simulado.
-Você DEVE gerar a PRIMEIRA das 3 questões de múltipla escolha sobre este tema.
+  let promptSuffix = `Estudante: ${question}`;
 
-REGRAS ABSOLUTAS PARA O SIMULADO:
-1. CADA ALTERNATIVA OBRIGATORIAMENTE EM UMA LINHA SEPARADA:
-   Questão 1: [enunciado claro e completo]
+  if (sessionMode === 'simulado_tema') {
+    // Usuário acabou de informar o TEMA — gerar Questão 1
+    modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO SIMULADO: GERAR QUESTÃO 1]
+O estudante escolheu o tema "${question}" para o simulado.
+Gere a PRIMEIRA das 3 questões de múltipla escolha sobre esse tema.
+
+REGRAS ABSOLUTAS:
+1. CADA ALTERNATIVA OBRIGATORIAMENTE EM LINHA SEPARADA:
+   Questão 1: [enunciado completo e claro]
    A) [texto da alternativa A]
    B) [texto da alternativa B]
    C) [texto da alternativa C]
    D) [texto da alternativa D]
-2. NUNCA coloque as alternativas na mesma linha (ex: ERRADO: "A) X B) Y C) Z D) W")
-3. NUNCA inclua seção de Referências nas perguntas do simulado
-4. Apresente UMA questão por vez e aguarde a resposta
-5. Quando o estudante errar: diga qual alternativa é a correta, explique BREVEMENTE (1-2 frases) e avance para a PRÓXIMA questão (não repita a questão errada)
-6. NÃO gere resumo ou explicação — apenas a questão formatada`;
+2. NUNCA coloque alternativas na mesma linha
+3. NUNCA inclua seção de Referências na questão
+4. Apresente SOMENTE a Questão 1 e aguarde a resposta`;
+    promptSuffix = `Tema escolhido pelo estudante: ${question}`;
+
+  } else if (sessionMode === 'simulado_respondendo') {
+    // Usuário está RESPONDENDO uma questão do simulado
+    modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO SIMULADO: AVALIANDO RESPOSTA]
+O estudante respondeu "${question}" à questão atual do simulado.
+Analise o histórico para identificar qual questão foi feita e avalie a resposta.
+
+REGRAS ABSOLUTAS:
+1. Se CORRETA: confirme brevemente (1-2 frases) e apresente a PRÓXIMA questão
+2. Se INCORRETA: diga qual é a alternativa correta, explique em 1-2 frases e apresente a PRÓXIMA questão
+3. NUNCA repita a questão que foi respondida — SEMPRE avançar para a questão seguinte
+4. CADA ALTERNATIVA da próxima questão EM LINHA SEPARADA:
+   Questão N: [enunciado]
+   A) [alternativa]
+   B) [alternativa]
+   C) [alternativa]
+   D) [alternativa]
+5. NUNCA inclua seção de Referências
+6. Se já foram feitas 3 questões, encerrar com: "Deseja continuar o simulado, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"`;
+    promptSuffix = `Resposta do estudante: ${question}`;
+
   } else if (sessionMode === 'resumo') {
     modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO RESUMO ATIVO]
 O estudante solicitou um resumo sobre "${question}".
@@ -440,11 +463,12 @@ Gere o resumo completo seguindo EXATAMENTE a estrutura obrigatória:
 **Exemplo clínico:** ...
 **Relação com a prática:** ...
 **Sugestões de estudo complementar:** ...
-**Referências:** (em formato ABNT, extraídas dos documentos RAG)\n`;
+**Referências:** (em formato ABNT, extraídas dos documentos RAG)`;
+    promptSuffix = `Tema solicitado pelo estudante: ${question}`;
   }
 
   const prompt = modeInstruction
-    ? `${modeInstruction}\n\nTema informado pelo estudante: ${question}`
+    ? `${modeInstruction}\n\n${promptSuffix}`
     : `Estudante: ${question}`;
 
   const result = await model.generateContent(prompt);
@@ -587,17 +611,25 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Detecção de contexto de sessão ────────────────────────────────────────
-    // Analisa a última mensagem do assistente para saber em qual fluxo estamos
+    // Analisa a última mensagem do assistente para distinguir o estado exato da sessão
     const lastAssistantMsg = [...history].reverse().find(h => h.role === 'assistant')?.content ?? '';
-    let sessionMode: 'simulado' | 'resumo' | 'info' | 'livre' = 'livre';
+    let sessionMode: 'simulado_tema' | 'simulado_respondendo' | 'resumo' | 'info' | 'livre' = 'livre';
 
+    // Simulado aguardando TEMA (próxima mensagem do usuário é o tema)
     if (
       lastAssistantMsg.includes('farei três perguntas de múltipla escolha') ||
-      lastAssistantMsg.includes('Questão 1') ||
-      lastAssistantMsg.includes('Questão 2') ||
       lastAssistantMsg.includes('Qual tema você deseja para o simulado')
     ) {
-      sessionMode = 'simulado';
+      sessionMode = 'simulado_tema';
+    // Simulado em andamento — usuário está RESPONDENDO uma questão
+    } else if (
+      /Questão\s*[123]/i.test(lastAssistantMsg) ||
+      lastAssistantMsg.includes('A)') ||
+      (lastAssistantMsg.includes('Feedback') && lastAssistantMsg.includes('Questão')) ||
+      lastAssistantMsg.includes('Resposta à Questão') ||
+      lastAssistantMsg.includes('alternativa correta')
+    ) {
+      sessionMode = 'simulado_respondendo';
     } else if (
       lastAssistantMsg.includes('Qual tema da disciplina') ||
       lastAssistantMsg.includes('você deseja estudar')
@@ -629,8 +661,8 @@ export async function POST(req: NextRequest) {
       ];
     }
 
-    // Se nenhum documento for encontrado no RAG e não é simulado (simulado pode gerar sem RAG)
-    if (docs.length === 0 && sessionMode !== 'simulado') {
+    // Se nenhum documento for encontrado no RAG e não é simulado (simulado não depende de RAG)
+    if (docs.length === 0 && sessionMode !== 'simulado_tema' && sessionMode !== 'simulado_respondendo') {
       saveMessages(session_id, question, FALLBACK_RESPONSE);
       return NextResponse.json({
         answer: FALLBACK_RESPONSE,
