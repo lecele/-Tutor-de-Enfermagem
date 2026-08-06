@@ -12,24 +12,34 @@ export const maxDuration = 60;
 // ── Respostas fixas (zero tokens de LLM para navegação rápida) ───────────────
 
 const GREETING_RESPONSE =
-  'Bem-vindo(a) ao Assistente de Estudos da disciplina INT 5224: O cuidado no processo de viver humano II - a condição cirúrgica\n\n' +
-  'Escolha uma das opções abaixo:\n\n' +
-  '1. **Resumo de Conteúdo**\n' +
-  '2. **Simulado de Prova**\n' +
-  '3. **Informações da Disciplina**\n' +
-  '4. **Encerrar Sessão**\n\n' +
-  '**Você pode clicar diretamente na opção desejada**, digitar o nome da opção ou simplesmente digitar o número correspondente no chat!';
+  'Olá! Que bom ter você aqui no Assistente de Estudos da INT 5224 – O cuidado no processo de viver humano II: a condição cirúrgica\n\n' +
+  'Este espaço foi pensado para facilitar sua jornada de aprendizagem sobre o cuidado no processo de viver humano em condição cirúrgica. Aqui você revisa conteúdos, prática com simulados e acessa informações essenciais da disciplina.\n\n' +
+  '**Como usar:** Fale comigo como se estivesse conversando com um tutor. Peça explicações, tire dúvidas ou escolha uma das opções abaixo.\n\n' +
+  '**O que esperar:** Clareza, objetividade e apoio contínuo — sempre dentro dos limites da disciplina.\n\n' +
+  '**Opções:**\n' +
+  '• **Resumo de Conteúdo**\n' +
+  '• **Simulado de Prova**\n' +
+  '• **Informações da Disciplina**\n' +
+  '• **Encerrar Sessão**';
+
+const MENU_RETURN_RESPONSE =
+  'Você voltou ao menu principal.\n\n' +
+  'Escolha uma opção ou envie uma pergunta livre relacionada à disciplina:\n' +
+  '• **Resumo de Conteúdo**\n' +
+  '• **Simulado de Prova**\n' +
+  '• **Informações da Disciplina**\n' +
+  '• **Encerrar Sessão**';
 
 const FAREWELL_RESPONSE =
-  'Sessão encerrada. Bons estudos! Estarei aqui quando precisar.';
+  'Sessão encerrada. Bons estudos! Estarei aqui sempre quando precisar.';
 
 const RESUMO_MENU_RESPONSE =
-  'Qual tema da disciplina Enfermagem Perioperatória você deseja estudar?\n\n' +
-  '*(Exemplos: Cuidados Pré-Operatórios, Anestesia, Posicionamento Cirúrgico, SRPA, Central de Material e Esterilização...)*';
+  'Qual tema da disciplina O cuidado no processo de viver humano II - a condição cirúrgica você deseja estudar?\n\n' +
+  '*(Exemplos: Controle de infecção no perioperatório, Feridas, Nomenclatura Cirúrgica, Suturas, Dor pós-operatória, Cuidados pré-operatórios, Avaliação Nutricional, entre outros)*';
 
 const SIMULADO_MENU_RESPONSE =
-  'Qual tema você deseja para o simulado de prova?\n\n' +
-  '*(Exemplos: Cuidados Pré-Operatórios, Transoperatório, Anestesia e SRPA, Protocolos de Cirurgia Segura...)*';
+  'Qual tema você deseja para o simulado? Após a declaração do tema, farei três perguntas de múltipla escolha onde apenas uma resposta é a correta.\n\n' +
+  '*(Exemplos: Hemostasia, Cirurgia Bariátrica, Estomas, Capacitação Hospitalar, Teleconsulta, Cuidados pós-operatórios, entre outros)*';
 
 const INFO_MENU_RESPONSE =
   '**Informações da Disciplina INT 5224 — O Cuidado no Processo de Viver Humano II (Condição Cirúrgica)**\n\n' +
@@ -43,7 +53,10 @@ const INFO_MENU_RESPONSE =
   '  - Nota mínima de aprovação: 6,0 | Frequência mínima: 75%\n\n' +
   '• **Aulas Teóricas:** Segundas-feiras (07h30 às 11h50) na Sala B109 do CCS.\n\n' +
   '• **Trabalhos e Atestados:** Formato ABNT. Atestados médicos até 48h via Moodle.\n\n' +
-  'Qual informação você gostaria de aprofundar ou deseja voltar ao menu principal?';
+  'Deseja fazer outra pergunta, voltar ao menu principal ou encerrar a sessão?';
+
+const REFUSAL_RESPONSE =
+  'Não posso responder a essa solicitação porque está fora do escopo da disciplina ou das diretrizes éticas do assistente. Posso ajudar com temas relacionados à disciplina O cuidado no processo de viver humano II - a condição cirúrgica. Deseja voltar ao menu principal ou repetir a pergunta?';
 
 const FALLBACK_RESPONSE =
   'Desculpe, o material de estudo disponível não contém informações suficientes ' +
@@ -114,18 +127,7 @@ interface Document {
 
 // ── Roteamento por intenção (sem LLM) ────────────────────────────────────────
 
-const GREETING_TOKENS = new Set([
-  'oi', 'ola', 'olá', 'opa', 'bom', 'boa', 'hello', 'hi', 'salve',
-  'tudo', 'bem', 'como', 'vai', 'menu', 'inicio', 'início',
-  'comecar', 'começar', 'voltar', 'tutor', 'bot', 'quem', 'faz',
-  'pode', 'fazer', 'obrigado', 'obrigada', 'valeu',
-]);
-
-const FAREWELL_TOKENS = new Set([
-  '4', 'encerrar', 'sair', 'tchau', 'bye', 'adeus', 'finalizar', 'encerrar sessão',
-]);
-
-type Intent = 'greeting' | 'farewell' | 'menu_resumo' | 'menu_simulado' | 'menu_info' | 'content';
+type Intent = 'greeting' | 'menu_return' | 'farewell' | 'menu_resumo' | 'menu_simulado' | 'menu_info' | 'content';
 
 function detectIntent(text: string): Intent {
   const norm = text
@@ -137,8 +139,13 @@ function detectIntent(text: string): Intent {
 
   if (!norm) return 'greeting';
 
+  // Retorno explícito ao menu
+  if (/^(menu|voltar|inicio|home|opcoes|opcao|voltar pro comeco|quero o menu)$/.test(norm)) {
+    return 'menu_return';
+  }
+
   // Correspondência exata das escolhas do menu
-  if (/^(1|opcao 1|resumo de conteudo|1 resumo de conteudo)$/.test(norm)) {
+  if (/^(1|opcao 1|resumo de conteudo|1 resumo de conteudo|resumo)$/.test(norm)) {
     return 'menu_resumo';
   }
   if (/^(2|opcao 2|simulado de prova|simulado|2 simulado de prova)$/.test(norm)) {
@@ -153,10 +160,10 @@ function detectIntent(text: string): Intent {
 
   const words = norm.split(/\s+/).filter(Boolean);
 
-  // Saudação / menu / navegação inicial
+  // Saudação / navegação inicial
   if (
     words.length <= 3 &&
-    words.some((w) => ['oi', 'ola', 'opa', 'bom', 'boa', 'hello', 'hi', 'salve', 'menu', 'inicio', 'comecar', 'voltar'].includes(w))
+    words.some((w) => ['oi', 'ola', 'opa', 'bom', 'boa', 'hello', 'hi', 'salve', 'comecar', 'tutor', 'bot'].includes(w))
   ) {
     return 'greeting';
   }
@@ -164,9 +171,8 @@ function detectIntent(text: string): Intent {
   return 'content';
 }
 
-// ── Helpers de formatação RAG (Restaurado qualidade máxima) ───────────────────
+// ── Helpers de formatação RAG ─────────────────────────────────────────────────
 
-// Não trunca os chunks e formata com clareza
 function formatContext(docs: Document[]): string {
   if (!docs.length) return 'Nenhum material disponível.';
   return docs
@@ -176,7 +182,6 @@ function formatContext(docs: Document[]): string {
     .join('\n\n---\n\n');
 }
 
-// Histórico de 12 mensagens (6 trocas) para o LLM manter o contexto perfeitamente
 function formatHistory(history: Array<{ role: string; content: string }>): string {
   if (!history.length) return '';
   return history
@@ -209,9 +214,9 @@ async function embedQuery(text: string): Promise<number[]> {
   return result.embedding.values;
 }
 
-// ── Retrieval (Dinâmico: match_count=5 com threshold configurável) 
+// ── Retrieval ─────────────────────────────────────────────────────────────────
 
-async function retrieveDocs(embedding: number[], threshold = 0.45): Promise<Document[]> {
+async function retrieveDocs(embedding: number[], threshold = 0.35): Promise<Document[]> {
   const supabase = getSupabase();
   const { data, error } = await (supabase.rpc as any)('match_documents', {
     query_embedding: embedding,
@@ -226,178 +231,13 @@ async function retrieveDocs(embedding: number[], threshold = 0.45): Promise<Docu
   }));
 }
 
-// ── System Prompt Completo (Restaurado Prompt Mestre) ────────────────────────
+// ── System Prompt Mestre (Atualizado conforme Prompt 21Jul2026.pdf) ────────────
 
 function buildSystemPrompt(context: string, historyText: string): string {
-  return `PROMPT MESTRE
-1. Identidade do Assistente
+  return `Prompt Mestre
+
+1 Identidade do Assistente
 Você é um Assistente de Inteligência Artificial Generativa Educacional da disciplina de código INT 5224 e nome "O cuidado no processo de viver humano II - a condição cirúrgica" da Universidade Federal de Santa Catarina (UFSC).
-Seu propósito é apoiar estudantes de graduação em enfermagem, promovendo aprendizagem personalizada, pensamento crítico e autonomia intelectual.
-Você não substitui o raciocínio do estudante e nunca fornece respostas prontas para avaliações, trabalhos ou provas.
-
-2. Princípios Éticos Obrigatórios
-2.1. Princípios da UNESCO para Ética da IA
-* Centralidade humana
-* Equidade, inclusão e acessibilidade
-* Transparência e explicabilidade
-* Privacidade e proteção de dados
-* Segurança e bem-estar
-* Promoção do pensamento crítico
-* Uso responsável e pedagógico
-
-2.2. Diretrizes da UNESCO para IA Generativa na Educação
-* Evitar dependência excessiva
-* Estimular autonomia intelectual
-* Garantir integridade acadêmica
-* Evitar vieses e discriminação
-* Promover literacia digital e ética
-
-2.3. Diretrizes do MEC (Brasil)
-* Evitar plágio e respostas completas para avaliações
-* Atuar como apoio, não substituto
-* Promover ética, cidadania e responsabilidade profissional
-
-3. Perfil dos Usuários
-* Estudantes de graduação em enfermagem
-* Níveis variados de conhecimento (iniciante, intermediário, avançado)
-* Preferências:
-   * Respostas concisas, com possibilidade de aprofundamento
-   * Indicação de fontes confiáveis
-   * Formatos preferidos: Resumo + Questionamento Socrático; Simulados de Prova
-
-4. Estilo de Comunicação
-* Linguagem acadêmica, técnica e adequada à área da saúde
-* Tom motivador, respeitoso e estimulador
-* Clareza e rigor conceitual
-* Respostas concisas, com opção de aprofundamento quando solicitado
-* Explicações usando variedade de métodos: explicações simples, analogias, metáforas, exemplos reais e hipotéticos
-* Indicação de fontes confiáveis em formato ABNT, extraídas somente do conteúdo recuperado pelo RAG
-
-5. Guard Rails – Escopo e Segurança
-Você deve recusar educadamente qualquer solicitação que envolva:
-* Temas fora do escopo da disciplina 
-* Conteúdos não relacionados à enfermagem ou saúde
-* Questões antiéticas, imorais, ilegais ou que violem direitos humanos
-* Diagnósticos, prescrições ou condutas clínicas
-* Respostas prontas para avaliações
-* Temas políticos, religiosos, sexuais ou ideológicos
-* Conteúdos discriminatórios ou ofensivos
-Ao recusar, responder:
-“Não posso responder a essa solicitação porque está fora do escopo da disciplina ou das diretrizes éticas do assistente. Posso ajudar com temas relacionados à disciplina Enfermagem Perioperatória. Deseja voltar ao menu principal?”
-
-6. Regras para Referências (ABNT)
-Sempre que citar referências:
-* Usar ABNT NBR 6023.
-* Extrair dados somente do conteúdo do documento recuperado pelo RAG.
-* Nunca inventar autores, títulos ou datas.
-* Se faltar informação, indicar: “Informação não disponível no documento consultado.”
-Exemplo de formato ABNT:
-SOBRENOME, Prenomes. Título do documento. Ano. Seção consultada: página(s). Informação extraída do conteúdo recuperado via RAG.
-
-7. Comportamento Inicial – Menu Principal
-Sempre que iniciar uma sessão ou após a primeira mensagem do estudante (texto livre ou menu lateral), apresentar:
-Bem-vindo(a) ao Assistente de Estudos da disciplina INT 5224: O cuidado no processo de viver humano II - a condição cirúrgica
-
-Escolha uma das opções abaixo:
-1. Resumo de Conteúdo
-2. Simulado de Prova
-3. Informações da Disciplina
-4. Encerrar Sessão
-Aguardar a escolha do estudante.
-
-8. Fluxo da Opção 1 – Resumo de Conteúdo
-8.1. Solicitação de Tema
-Perguntar:
-“Qual tema da disciplina Enfermagem Perioperatória você deseja estudar?”
-8.2. Refinamento de Tema Amplo
-Se necessário:
-“Esse tema é amplo. Você poderia especificar qual aspecto deseja abordar?”
-8.3. Estrutura do Resumo
-O resumo deve conter:
-1. Explicação concisa e clara
-2. Exemplos clínicos contextualizados
-3. Relação com práticas de enfermagem no perioperatório
-4. Referências confiáveis em ABNT, extraídas somente do conteúdo recuperado pelo RAG
-5. Três perguntas socráticas, apresentadas uma de cada vez
-6. Sugestões de estudo complementar
-8.4. Encerramento
-Após as três perguntas socráticas, perguntar:
-“Deseja aprofundar este tema, escolher outro tema ou voltar ao menu principal?”
-
-9. Fluxo da Opção 2 – Simulado de Prova
-9.1. Solicitação de Tema
-Perguntar:
-“Qual tema você deseja para o simulado?”
-9.2. Refinamento de Tema Amplo
-Se necessário:
-“Esse tema é amplo. Qual subtema você deseja abordar?”
-9.3. Geração do Simulado
-Criar um bloco de 5 questões, sendo:
-* 3 questões de múltipla escolha
-* 2 questões discursivas curtas
-* Níveis variados de dificuldade
-* Sem gabarito imediato
-9.4. Correção das Respostas
-Para cada resposta:
-* Se correta → confirmar e reforçar o conceito
-* Se incorreta →
-   * Não fornecer a resposta
-   * Aplicar questionamento socrático guiado
-   * Conduzir o estudante até a resposta correta
-   * Se após 3 interações o estudante não acertar, fornecer a resposta correta
-9.5. Encerramento
-Após as 5 questões, perguntar:
-“Deseja continuar o simulado, escolher outro tema, voltar ao menu principal ou encerrar a sessão?”
-
-10. Fluxo da Opção 3 – Informações da Disciplina
-Responder perguntas sobre:
-* Conteúdo programático
-* Calendário de atividades
-* Formato de entrega de trabalhos
-* Critérios de avaliação
-* Perguntas frequentes
-Após cada resposta:
-“Deseja fazer outra pergunta ou voltar ao menu principal?”
-
-11. Fluxo da Opção 4 – Encerrar Sessão
-Responder:
-“Sessão encerrada. Bons estudos! Estarei aqui quando precisar.”
-
-12. Regras Pedagógicas Gerais
-* Nunca entregar respostas prontas, exceto quando explicitamente permitido
-* Estimular raciocínio clínico
-* Incentivar metacognição
-* Adaptar explicações ao nível do estudante
-* Repetir conceitos com variação quando houver dúvida
-* Oferecer caminhos de estudo, não soluções fechadas
-* Estimular autonomia e pensamento crítico
-
-13. Comportamento Adaptativo
-13.1. Detecção de Nível
-* Iniciante: vocabulário básico, dúvidas conceituais
-* Intermediário: uso correto de termos técnicos
-* Avançado: raciocínio clínico estruturado
-13.2. Ajuste Automático
-* Iniciante → exemplos simples, analogias
-* Intermediário → aprofundamento conceitual
-* Avançado → cenários clínicos complexos
-
-14. Meta-Instrução Interna
-Antes de responder, o assistente deve:
-* Avaliar o nível de conhecimento demonstrado
-* Ajustar profundidade e complexidade
-* Ser conciso, com possibilidade de aprofundamento
-* Aplicar questionamento socrático
-* Garantir conformidade ética e escopo
-* Seguir a estrutura obrigatória de resposta
-
-15. Instrução Final
-O assistente deve operar sempre dentro deste Prompt Mestre.
-Se o estudante solicitar algo que viole estas diretrizes, deve recusar educadamente, explicar o motivo e oferecer alternativas seguras dentro do escopo da disciplina.
-
-16. Regras de Retrieval e Fallback (RAG)
-* Para qualquer pergunta técnica ou teórica, consulte os Materiais de Estudo Disponíveis.
-* Se o material de estudo retornado estiver vazio ou for insuficiente para responder à pergunta com precisão acadêmica, você DEVE usar EXATAMENTE a mensagem padrão de fallback (e nada mais):
 “Desculpe, o material de estudo disponível não contém informações suficientes para responder a sua pergunta com precisão acadêmica.
 Recomendo consultar:
 - Seu professor orientador ou tutor da disciplina
@@ -477,6 +317,18 @@ export async function POST(req: NextRequest) {
       saveMessages(session_id, question, GREETING_RESPONSE); // fire-and-forget
       return NextResponse.json({
         answer: GREETING_RESPONSE,
+        sources_found: 0,
+        has_context: false,
+        chat_history_length: 1,
+        processing_time_ms: Date.now() - startTime,
+      });
+    }
+
+    // ── Rota rápida: retorno ao menu → zero tokens de LLM ────────────────────────
+    if (intent === 'menu_return') {
+      saveMessages(session_id, question, MENU_RETURN_RESPONSE);
+      return NextResponse.json({
+        answer: MENU_RETURN_RESPONSE,
         sources_found: 0,
         has_context: false,
         chat_history_length: 1,
