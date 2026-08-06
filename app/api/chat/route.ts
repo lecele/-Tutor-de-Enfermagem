@@ -401,7 +401,8 @@ REGRA CRÍTICA FINAL:
 async function generateResponse(
   question: string,
   docs: Document[],
-  history: Array<{ role: string; content: string }>
+  history: Array<{ role: string; content: string }>,
+  sessionMode: 'simulado' | 'resumo' | 'info' | 'livre' = 'livre'
 ): Promise<string> {
   const systemPrompt = buildSystemPrompt(formatContext(docs), formatHistory(history));
 
@@ -413,7 +414,35 @@ async function generateResponse(
     },
   });
 
-  const result = await model.generateContent(`Estudante: ${question}`);
+  // Injeta instrução de contexto de sessão para garantir o modo correto
+  let modeInstruction = '';
+  if (sessionMode === 'simulado') {
+    modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO SIMULADO ATIVO]
+O estudante acabou de informar o tema "${question}" para o simulado.
+Você DEVE gerar a PRIMEIRA das 3 questões de múltipla escolha sobre este tema, com 4 alternativas (A, B, C, D), apenas UMA correta.
+NÃO gere um resumo ou explicação. Gere SOMENTE a questão no formato:
+Questão 1: [enunciado da questão]
+A) [alternativa]
+B) [alternativa]
+C) [alternativa]
+D) [alternativa]
+Aguarde a resposta do estudante antes de apresentar a próxima questão.`;
+  } else if (sessionMode === 'resumo') {
+    modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO RESUMO ATIVO]
+O estudante solicitou um resumo sobre "${question}".
+Gere o resumo completo seguindo EXATAMENTE a estrutura obrigatória:
+**Explicação:** ...
+**Exemplo clínico:** ...
+**Relação com a prática:** ...
+**Sugestões de estudo complementar:** ...
+**Referências:** (em formato ABNT, extraídas dos documentos RAG)\n`;
+  }
+
+  const prompt = modeInstruction
+    ? `${modeInstruction}\n\nTema informado pelo estudante: ${question}`
+    : `Estudante: ${question}`;
+
+  const result = await model.generateContent(prompt);
 
   return result.response.text();
 }
@@ -552,8 +581,33 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ── Detecção de contexto de sessão ────────────────────────────────────────
+    // Analisa a última mensagem do assistente para saber em qual fluxo estamos
+    const lastAssistantMsg = [...history].reverse().find(h => h.role === 'assistant')?.content ?? '';
+    let sessionMode: 'simulado' | 'resumo' | 'info' | 'livre' = 'livre';
+
+    if (
+      lastAssistantMsg.includes('farei três perguntas de múltipla escolha') ||
+      lastAssistantMsg.includes('Questão 1') ||
+      lastAssistantMsg.includes('Questão 2') ||
+      lastAssistantMsg.includes('Qual tema você deseja para o simulado')
+    ) {
+      sessionMode = 'simulado';
+    } else if (
+      lastAssistantMsg.includes('Qual tema da disciplina') ||
+      lastAssistantMsg.includes('você deseja estudar')
+    ) {
+      sessionMode = 'resumo';
+    } else if (
+      lastAssistantMsg.includes('Deseja fazer outra pergunta, voltar ao menu') ||
+      lastAssistantMsg.includes('Informações da Disciplina INT 5224')
+    ) {
+      sessionMode = 'info';
+    }
+
     // Threshold dinâmico: busca de informações do curso usa threshold menor
-    const isCourseQuery = /prof|horar|atend|cron|calend|nota|avali|plano|trabalho|conteudo|carga|disciplin|ementa|frequenc|moodle|email|contato|media|prova/i.test(question);
+    const isCourseQuery = sessionMode === 'info' ||
+      /prof|horar|atend|cron|calend|nota|avali|plano|trabalho|conteudo|carga|disciplin|ementa|frequenc|moodle|email|contato|media|prova/i.test(question);
     const threshold = isCourseQuery ? 0.25 : 0.35;
 
     let docs = await retrieveDocs(embedding, threshold);
@@ -570,8 +624,8 @@ export async function POST(req: NextRequest) {
       ];
     }
 
-    // Se nenhum documento for encontrado, retornar fallback
-    if (docs.length === 0) {
+    // Se nenhum documento for encontrado no RAG e não é simulado (simulado pode gerar sem RAG)
+    if (docs.length === 0 && sessionMode !== 'simulado') {
       saveMessages(session_id, question, FALLBACK_RESPONSE);
       return NextResponse.json({
         answer: FALLBACK_RESPONSE,
@@ -582,7 +636,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const answer = await generateResponse(question, docs, history);
+    const answer = await generateResponse(question, docs, history, sessionMode);
 
     saveMessages(session_id, question, answer);
 
