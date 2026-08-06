@@ -675,7 +675,12 @@ export async function POST(req: NextRequest) {
 
     const answer = await generateResponse(question, docs, history, sessionMode);
 
-    saveMessages(session_id, question, answer);
+    // await quando em modo simulado: a pr\u00f3xima mensagem depende deste hist\u00f3rico para detec\u00e7\u00e3o de estado
+    if (sessionMode === 'simulado_tema' || sessionMode === 'simulado_respondendo' || sessionMode === 'resumo') {
+      await saveMessages(session_id, question, answer);
+    } else {
+      saveMessages(session_id, question, answer);
+    }
 
     return NextResponse.json({
       answer,
