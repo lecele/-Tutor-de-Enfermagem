@@ -138,7 +138,11 @@ function detectIntent(text: string): Intent {
   if (!norm) return 'greeting';
 
   // Retorno explícito ao menu
-  if (/^(menu|voltar|inicio|home|opcoes|opcao|voltar pro comeco|quero o menu)$/.test(norm)) {
+  if (
+    /^(menu|voltar|inicio|home|opcoes|opcao|voltar pro comeco|quero o menu|menu principal|voltar ao menu|quero voltar ao menu|voltar para o menu|ir para o menu|retornar ao menu|quero voltar)$/.test(norm) ||
+    (norm.length < 30 && /\bvoltar\b/.test(norm) && /\bmenu\b/.test(norm)) ||
+    (norm.length < 30 && /\bmenu\b/.test(norm) && /\bprincipal\b/.test(norm))
+  ) {
     return 'menu_return';
   }
 
