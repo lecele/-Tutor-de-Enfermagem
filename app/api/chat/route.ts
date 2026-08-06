@@ -523,7 +523,7 @@ export async function POST(req: NextRequest) {
 
     // ── Rota rápida: menu de resumo ───────────────────────────────────────────
     if (intent === 'menu_resumo') {
-      saveMessages(session_id, question, RESUMO_MENU_RESPONSE);
+      await saveMessages(session_id, question, RESUMO_MENU_RESPONSE); // await: próxima msg depende deste histórico
       return NextResponse.json({
         answer: RESUMO_MENU_RESPONSE,
         sources_found: 0,
@@ -535,7 +535,7 @@ export async function POST(req: NextRequest) {
 
     // ── Rota rápida: menu de simulado ─────────────────────────────────────────
     if (intent === 'menu_simulado') {
-      saveMessages(session_id, question, SIMULADO_MENU_RESPONSE);
+      await saveMessages(session_id, question, SIMULADO_MENU_RESPONSE); // await: próxima msg depende deste histórico
       return NextResponse.json({
         answer: SIMULADO_MENU_RESPONSE,
         sources_found: 0,
