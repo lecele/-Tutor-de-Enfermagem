@@ -537,7 +537,17 @@ Ao final: "Deseja aprofundar este tema, escolher outro tema, voltar ao menu prin
   return result.response.text();
 }
 
-// ── Histórico ─────────────────────────────────────────────────────────────────
+// ── Histórico e Cache de Estado ───────────────────────────────────────────────
+
+const sessionStateMap = new Map<string, { lastAssistantMsg: string; lastTheme: string }>();
+
+function updateSessionState(sessionId: string, assistantMsg: string, theme?: string) {
+  const current = sessionStateMap.get(sessionId) || { lastAssistantMsg: '', lastTheme: '' };
+  sessionStateMap.set(sessionId, {
+    lastAssistantMsg: assistantMsg,
+    lastTheme: theme || current.lastTheme || ''
+  });
+}
 
 async function getSessionHistory(sessionId: string): Promise<Array<{ role: string; content: string }>> {
   try {
@@ -550,7 +560,8 @@ async function getSessionHistory(sessionId: string): Promise<Array<{ role: strin
   } catch { return []; }
 }
 
-async function saveMessages(sessionId: string, userMsg: string, assistantMsg: string) {
+async function saveMessages(sessionId: string, userMsg: string, assistantMsg: string, theme?: string) {
+  updateSessionState(sessionId, assistantMsg, theme);
   try {
     await (getSupabase().from('chat_messages') as any).insert([
       { session_id: sessionId, role: 'user', content: userMsg },
@@ -656,27 +667,34 @@ export async function POST(req: NextRequest) {
         console.warn('[aprofundar history]', e);
       }
 
-      // Encontra o último tema estudado pelo usuário no histórico
-      let detectedTheme = '';
-      const reversedHistory = [...historyForAprofundar].reverse();
-      for (const msg of reversedHistory) {
-        if (msg.role === 'user') {
-          const normUserMsg = msg.content.toLowerCase().trim();
-          if (!/^(menu|voltar|inicio|resumo|simulado|informacoes|encerrar|aprofundar|oi|ola|resumo de conteudo|simulado de prova|informacoes da disciplina|encerrar sessao)$/i.test(normUserMsg)) {
-            detectedTheme = msg.content;
-            break;
+      // Encontra o último tema estudado pelo usuário (prioriza cache em memória, depois histórico)
+      const stateFromMap = sessionStateMap.get(session_id);
+      let detectedTheme = stateFromMap?.lastTheme || '';
+
+      if (!detectedTheme) {
+        const reversedHistory = [...historyForAprofundar].reverse();
+        for (const msg of reversedHistory) {
+          if (msg.role === 'user') {
+            const normUserMsg = msg.content.toLowerCase().trim();
+            if (!/^(menu|voltar|inicio|resumo|simulado|informacoes|encerrar|aprofundar|oi|ola|resumo de conteudo|simulado de prova|informacoes da disciplina|encerrar sessao)$/i.test(normUserMsg)) {
+              detectedTheme = msg.content;
+              break;
+            }
           }
         }
       }
 
+      if (!detectedTheme) {
+        detectedTheme = 'O cuidado perioperatório em enfermagem cirúrgica';
+      }
+
       try {
-        const queryForEmbedding = detectedTheme || question;
-        embeddingForAprofundar = await embedQuery(queryForEmbedding);
+        embeddingForAprofundar = await embedQuery(detectedTheme);
       } catch { }
 
       const docsAprofundar = embeddingForAprofundar ? await retrieveDocs(embeddingForAprofundar, 0.35) : [];
       const answerAprofundar = await generateResponse(question, docsAprofundar, historyForAprofundar, 'resumo_aprofundar', detectedTheme);
-      await saveMessages(session_id, question, answerAprofundar);
+      await saveMessages(session_id, question, answerAprofundar, detectedTheme);
       return NextResponse.json({
         answer: answerAprofundar,
         sources_found: docsAprofundar.length,
@@ -698,8 +716,10 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Detecção de contexto de sessão ────────────────────────────────────────
-    // Prioridade: Atalho Inline na mensagem do estudante > Estado da sessão (última msg do assistente)
-    const lastAssistantMsg = [...history].reverse().find(h => h.role === 'assistant')?.content ?? '';
+    // Prioridade: Atalho Inline > Cache em Memória > Histórico do Assistente
+    const stateFromMap = sessionStateMap.get(session_id);
+    const lastAssistantMsg = stateFromMap?.lastAssistantMsg || [...history].reverse().find(h => h.role === 'assistant')?.content || '';
+
     let sessionMode: SessionMode = 'livre';
     let inlineTheme = '';
 
@@ -805,14 +825,9 @@ export async function POST(req: NextRequest) {
     }
 
     const answer = await generateResponse(question, docs, history, sessionMode, inlineTheme);
+    const themeToSave = inlineTheme || (sessionMode === 'simulado_tema' || sessionMode === 'resumo' ? question : '');
 
-    // await para modos onde o próximo estado depende do histórico salvo
-    const needsAwait = ['simulado_tema', 'simulado_respondendo', 'simulado_segunda_tentativa', 'resumo', 'resumo_aprofundar'].includes(sessionMode);
-    if (needsAwait) {
-      await saveMessages(session_id, question, answer);
-    } else {
-      saveMessages(session_id, question, answer);
-    }
+    await saveMessages(session_id, question, answer, themeToSave);
 
     return NextResponse.json({
       answer,
