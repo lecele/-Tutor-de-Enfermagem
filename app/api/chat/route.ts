@@ -519,25 +519,24 @@ REGRAS ABSOLUTAS:
     promptSuffix = `Resposta do estudante (2ª tentativa): ${question}`;
 
   } else if (sessionMode === 'resumo_aprofundar') {
-    // Usuário quer aprofundar o tema — NÃO voltar ao menu, continuar no mesmo tema
+    const targetTopic = themeToUse || 'o tema estudado anteriormente';
     modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO APROFUNDAMENTO]
-O estudante quer aprofundar o tema que estava estudando.
-Analise o histórico da conversa e identifique o tema estudado.
-Gere uma explicação MAIS DETALHADA e COMPLETA sobre o MESMO tema.
+O estudante quer aprofundar o tema "${targetTopic}".
+NÃO pergunte o tema novamente.
+NÃO volte ao menu principal.
+NÃO exiba a mensagem de boas-vindas.
+Gere uma explicação MAIS DETALHADA e COMPLETA sobre "${targetTopic}".
 
 REGRAS ABSOLUTAS:
-1. NÃO pergunte o tema novamente — ele está no histórico
-2. NÃO volte ao menu principal
-3. NÃO exiba a mensagem de boas-vindas
-4. Gere um aprofundamento seguindo a mesma estrutura:
-   **Explicação aprofundada:** [conteúdo mais detalhado e aprofundado]
-   **Aspectos avançados:** [conceitos mais complexos do tema]
+1. Estrutura do aprofundamento:
+   **Explicação aprofundada:** [conteúdo mais detalhado sobre ${targetTopic}]
+   **Aspectos avançados:** [conceitos mais complexos]
    **Implicações clínicas:** [aplicações práticas avançadas de enfermagem]
    **Sugestões de estudo complementar:** ...
    **Referências:** (em formato ABNT, extraídas dos documentos RAG)
-5. Ao final, apresentar opções:
+2. Ao final, apresentar opções de continuidade:
    "Deseja aprofundar mais, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"`;
-    promptSuffix = `O estudante solicitou aprofundamento sobre o tema já estudado. Identifique o tema no histórico e gere o aprofundamento.`;
+    promptSuffix = `O estudante solicitou aprofundamento sobre o tema: ${targetTopic}`;
 
   } else if (sessionMode === 'resumo') {
     modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO RESUMO ATIVO]
@@ -672,19 +671,34 @@ export async function POST(req: NextRequest) {
 
     // ── Rota de aprofundamento: continua no mesmo tema sem voltar ao menu ────
     if (intent === 'aprofundar') {
-      // Carrega histórico para extrair o tema e gerar aprofundamento
       let historyForAprofundar: Array<{ role: string; content: string }> = [];
-      let embeddingForAprofundar!: number[];
+      let embeddingForAprofundar: number[] | null = null;
       try {
-        [historyForAprofundar, embeddingForAprofundar] = await Promise.all([
-          getSessionHistory(session_id),
-          embedQuery(question),
-        ]);
-      } catch {
-        embeddingForAprofundar = await embedQuery(question);
+        historyForAprofundar = await getSessionHistory(session_id);
+      } catch (e) {
+        console.warn('[aprofundar history]', e);
       }
-      const docsAprofundar = await retrieveDocs(embeddingForAprofundar, 0.35);
-      const answerAprofundar = await generateResponse(question, docsAprofundar, historyForAprofundar, 'resumo_aprofundar');
+
+      // Encontra o último tema estudado pelo usuário no histórico
+      let detectedTheme = '';
+      const reversedHistory = [...historyForAprofundar].reverse();
+      for (const msg of reversedHistory) {
+        if (msg.role === 'user') {
+          const normUserMsg = msg.content.toLowerCase().trim();
+          if (!/^(menu|voltar|inicio|resumo|simulado|informacoes|encerrar|aprofundar|oi|ola|resumo de conteudo|simulado de prova|informacoes da disciplina|encerrar sessao)$/i.test(normUserMsg)) {
+            detectedTheme = msg.content;
+            break;
+          }
+        }
+      }
+
+      try {
+        const queryForEmbedding = detectedTheme || question;
+        embeddingForAprofundar = await embedQuery(queryForEmbedding);
+      } catch { }
+
+      const docsAprofundar = embeddingForAprofundar ? await retrieveDocs(embeddingForAprofundar, 0.35) : [];
+      const answerAprofundar = await generateResponse(question, docsAprofundar, historyForAprofundar, 'resumo_aprofundar', detectedTheme);
       await saveMessages(session_id, question, answerAprofundar);
       return NextResponse.json({
         answer: answerAprofundar,
