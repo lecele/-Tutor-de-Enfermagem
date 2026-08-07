@@ -126,7 +126,7 @@ interface Document {
 
 // ── Roteamento por intenção (sem LLM) ────────────────────────────────────────
 
-type Intent = 'greeting' | 'menu_return' | 'farewell' | 'menu_resumo' | 'menu_simulado' | 'menu_info' | 'aprofundar' | 'content';
+type Intent = 'greeting' | 'menu_return' | 'farewell' | 'menu_resumo' | 'menu_resumo_inline' | 'menu_simulado' | 'menu_simulado_inline' | 'menu_info' | 'aprofundar' | 'content';
 
 function detectIntent(text: string): Intent {
   const norm = text
@@ -164,6 +164,16 @@ function detectIntent(text: string): Intent {
   // Aprofundamento do tema atual (NÃO é retorno ao menu)
   if (/^(aprofundar|aprofundar este tema|aprofundar mais|aprofundar o tema)$/.test(norm)) {
     return 'aprofundar';
+  }
+
+  // Simulado com tema inline: "Simulado sobre Hemostasia", "Quero um simulado de Feridas"
+  if (/\bsimulad[ao]\b/.test(norm) && /\b(sobre|de)\b/.test(norm) && !(/^(simulado de prova|2|opcao 2)$/.test(norm))) {
+    return 'menu_simulado_inline';
+  }
+
+  // Resumo com tema inline: "Resumo sobre Feridas", "Resumo de Hemostasia"
+  if (/\b(resumo|resumir)\b/.test(norm) && /\b(sobre|de)\b/.test(norm) && !(/^(resumo de conteudo|1|opcao 1)$/.test(norm))) {
+    return 'menu_resumo_inline';
   }
 
   const words = norm.split(/\s+/).filter(Boolean);
@@ -398,14 +408,14 @@ Responder EXATAMENTE: "Sessão encerrada. Bons estudos! Estarei aqui sempre quan
 15 Instruções Técnicas
 - Entradas do usuário: normalizar espaços, maiúsculas/minúsculas e acentos antes da validação.
 - Referências: extrair metadados dos arquivos RAG (autor, título, ano, páginas) e montar em ABNT; se metadado ausente, omitir ou indicar "Informação não encontrada." conforme relevância.
-- Exemplo OBRIGATÓRIO de saída formatada para resumos:
+- Exemplo OBRIGATÓRIO de saída formatada para resumos (MANTER ESTA ORDEM EXATA):
   **Explicação:** texto conciso...
   **Exemplo clínico:** caso X...
   **Relação com a prática:** ações de enfermagem...
-  **Sugestões de estudo complementar:** ...
   **Referências:**
   - SOBRENOME, Prenomes. Título do documento. Ano. Seção consultada: página(s).
   - Informação não disponível no documento consultado.
+  **Sugestões de estudo complementar:** ...
 
 ---
 
@@ -538,12 +548,12 @@ REGRAS ABSOLUTAS:
   } else if (sessionMode === 'resumo') {
     modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO RESUMO ATIVO]
 O estudante solicitou um resumo sobre "${question}".
-Gere o resumo completo seguindo EXATAMENTE a estrutura obrigatória:
+Gere o resumo completo seguindo EXATAMENTE esta ordem e estrutura (NÃO altere a ordem):
 **Explicação:** texto claro e conciso sobre o tema.
 **Exemplo clínico:** caso contextualizado na enfermagem perioperatória.
 **Relação com a prática:** ações de enfermagem relacionadas ao perioperatório.
+**Referências:** (em formato ABNT, extraídas dos documentos RAG — OBRIGATÓRIO antes de Sugestões)
 **Sugestões de estudo complementar:** indicações para aprofundamento.
-**Referências:** (em formato ABNT, extraídas dos documentos RAG)
 Ao final: "Deseja aprofundar este tema, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"`;
     promptSuffix = `Tema solicitado pelo estudante: ${question}`;
   }
@@ -688,6 +698,44 @@ export async function POST(req: NextRequest) {
         has_context: docsAprofundar.length > 0,
         chat_history_length: historyForAprofundar.length + 2,
         processing_time_ms: Date.now() - startTime,
+      });
+    }
+
+    // ── Rota de tema inline: Simulado sobre X → inicia simulado direto ────────
+    if (intent === 'menu_simulado_inline') {
+      // Extrair tema: tudo após "sobre", "de" excluindo "prova"
+      const topicMatch = question.match(/(?:simulad[oa])\s+(?:sobre|de)\s+(.+)/i);
+      const topic = topicMatch ? topicMatch[1].trim() : question;
+      let histSim: Array<{ role: string; content: string }> = [];
+      let embSim!: number[];
+      try {
+        [histSim, embSim] = await Promise.all([getSessionHistory(session_id), embedQuery(topic)]);
+      } catch { embSim = await embedQuery(topic); }
+      const docsSim = await retrieveDocs(embSim, 0.35);
+      const ansSim = await generateResponse(topic, docsSim, histSim, 'simulado_tema');
+      await saveMessages(session_id, question, ansSim);
+      return NextResponse.json({
+        answer: ansSim, sources_found: docsSim.length, has_context: docsSim.length > 0,
+        chat_history_length: histSim.length + 2, processing_time_ms: Date.now() - startTime,
+      });
+    }
+
+    // ── Rota de tema inline: Resumo sobre X → gera resumo direto ─────────────
+    if (intent === 'menu_resumo_inline') {
+      // Extrair tema: tudo após "sobre", "de"
+      const topicMatch = question.match(/(?:resumo|resumir)\s+(?:sobre|de)\s+(.+)/i);
+      const topic = topicMatch ? topicMatch[1].trim() : question;
+      let histRes: Array<{ role: string; content: string }> = [];
+      let embRes!: number[];
+      try {
+        [histRes, embRes] = await Promise.all([getSessionHistory(session_id), embedQuery(topic)]);
+      } catch { embRes = await embedQuery(topic); }
+      const docsRes = await retrieveDocs(embRes, 0.35);
+      const ansRes = await generateResponse(topic, docsRes, histRes, 'resumo');
+      await saveMessages(session_id, question, ansRes);
+      return NextResponse.json({
+        answer: ansRes, sources_found: docsRes.length, has_context: docsRes.length > 0,
+        chat_history_length: histRes.length + 2, processing_time_ms: Date.now() - startTime,
       });
     }
 
