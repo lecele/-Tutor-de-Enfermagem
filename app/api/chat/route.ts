@@ -499,18 +499,21 @@ REGRAS ABSOLUTAS:
 
   } else if (sessionMode === 'resumo_aprofundar') {
     const targetTopic = themeToUse || 'o tema estudado anteriormente';
-Gere uma explicação MAIS DETALHADA e COMPLETA sobre "${targetTopic}".
+    modeInstruction = `[MODO ATIVO: APROFUNDAMENTO DE RESUMO — OPÇÃO 1]
+VOCÊ ESTÁ APROFUNDANDO O RESUMO SOBRE O TEMA "${targetTopic}".
+NÃO PERGUNTE O TEMA NOVAMENTE. NÃO VOLTE AO MENU. NÃO EXIBA MENSAGEM DE BOAS-VINDAS.
 
-REGRAS ABSOLUTAS:
-1. Estrutura do aprofundamento:
-   **Explicação aprofundada:** [conteúdo mais detalhado sobre ${targetTopic}]
-   **Aspectos avançados:** [conceitos mais complexos]
-   **Implicações clínicas:** [aplicações práticas avançadas de enfermagem]
-   **Sugestões de estudo complementar:** ...
-   **Referências:** (em formato ABNT, extraídas dos documentos RAG)
-2. Ao final, apresentar opções de continuidade:
-   "Deseja aprofundar mais, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"`;
-    promptSuffix = `O estudante solicitou aprofundamento sobre o tema: ${targetTopic}`;
+GERAR OBRIGATORIAMENTE O APROFUNDAMENTO NO SEGUINTE FORMATO EXATO:
+**Explicação aprofundada:** [Explicação detalhada e aprofundada sobre ${targetTopic}]
+**Aspectos avançados:** [Conceitos mais complexos do tema]
+**Implicações clínicas:** [Aplicações práticas avançadas na enfermagem]
+**Sugestões de estudo complementar:** [Indicações de leitura]
+**Referências:**
+- [Citações ABNT extraídas dos documentos RAG, ou "Informação não disponível no documento consultado." se RAG estiver vazio]
+
+Ao final, inclua EXATAMENTE a pergunta:
+"Deseja aprofundar mais, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"`;
+    promptSuffix = `Tema a aprofundar: ${targetTopic}`;
 
   } else if (sessionMode === 'resumo') {
     modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO RESUMO ATIVO]
