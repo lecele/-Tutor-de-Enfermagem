@@ -452,79 +452,53 @@ async function generateResponse(
   let promptSuffix = `Estudante: ${question}`;
 
   if (sessionMode === 'simulado_tema') {
-    // Usuário informou o TEMA (diretamente ou via atalho inline) — gerar Questão 1
-    modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO SIMULADO: GERAR QUESTÃO 1]
-O estudante escolheu o tema "${themeToUse}" para o simulado.
-NÃO pergunte o tema novamente. Inicie DIRETAMENTE com a Questão 1 do simulado sobre "${themeToUse}".
-Gere a PRIMEIRA das 3 questões de múltipla escolha sobre esse tema.
+    modeInstruction = `[MODO ATIVO: SIMULADO DE PROVA — GERAR QUESTÃO 1]
+VOCÊ ESTÁ GERANDO UM SIMULADO DE PROVA (OPÇÃO 2) SOBRE O TEMA "${themeToUse}".
+NUNCA GERE RESUMO DE CONTEÚDO. NUNCA USE OS TÍTULOS **Explicação:** OU **Exemplo clínico:**.
 
-REGRAS ABSOLUTAS DE FORMATAÇÃO:
-1. Título em negrito: **Questão 1:** [enunciado completo e claro sobre ${themeToUse}]
-2. Cada alternativa em LINHA SEPARADA e em negrito:
-   **A)** [texto da alternativa A]
-   **B)** [texto da alternativa B]
-   **C)** [texto da alternativa C]
-   **D)** [texto da alternativa D]
-3. NUNCA coloque alternativas na mesma linha
-4. NUNCA inclua seção de Referências na questão
-5. Ao final: "Por favor, responda com a letra da alternativa correta (A, B, C ou D)."
-6. Apresente SOMENTE a Questão 1 e aguarde a resposta`;
-    promptSuffix = `Tema escolhido pelo estudante: ${themeToUse}`;
+GERAR OBRIGATORIAMENTE A QUESTÃO 1 NO SEGUINTE FORMATO EXATO:
+**Questão 1:** [Enunciado claro e contextualizado da primeira questão sobre ${themeToUse}]
+
+**A)** [Texto da alternativa A]
+**B)** [Texto da alternativa B]
+**C)** [Texto da alternativa C]
+**D)** [Texto da alternativa D]
+
+Por favor, responda com a letra da alternativa correta (A, B, C ou D).`;
+    promptSuffix = `Tema do simulado: ${themeToUse}`;
 
   } else if (sessionMode === 'simulado_respondendo') {
-    // 1ª tentativa — se incorreto, pedir nova chance (NÃO revelar a resposta)
-    modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO SIMULADO: 1ª TENTATIVA]
-O estudante respondeu "${question}" à questão atual do simulado (PRIMEIRA TENTATIVA).
-Analise o histórico e avalie a resposta.
+    modeInstruction = `[MODO ATIVO: SIMULADO DE PROVA — AVALIANDO 1ª TENTATIVA]
+VOCÊ ESTÁ NO MODO SIMULADO DE PROVA.
+O estudante respondeu "${question}" à questão atual (PRIMEIRA TENTATIVA).
+NUNCA GERE RESUMO DE CONTEÚDO.
 
 REGRAS ABSOLUTAS:
-1. Se CORRETA: confirme brevemente (1-2 frases) e apresente a PRÓXIMA questão
-2. Se INCORRETA: diga APENAS que a resposta está incorreta e peça para tentar novamente a MESMA questão
-   - Use EXATAMENTE: "Sua resposta está incorreta. Tente novamente! Qual das alternativas você escolheria agora?"
-   - NÃO revele a alternativa correta ainda
-   - NÃO avance para a próxima questão ainda
-   - NÃO repita o enunciado completo — apenas informe que está errado e aguarde
-3. Para a PRÓXIMA questão (se correto), usar formatação em negrito:
-   **Questão N:** [enunciado]
-   **A)** [alternativa]
-   **B)** [alternativa]
-   **C)** [alternativa]
-   **D)** [alternativa]
-4. NUNCA inclua seção de Referências
-5. Se já foram feitas 3 questões e essa foi a última (correta), encerrar com:
-   "Deseja continuar o simulado, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"`;
+1. Se a resposta estiver CORRETA:
+   - Confirme brevemente (1-2 frases).
+   - Apresente a PRÓXIMA questão (**Questão N:** com **A)**, **B)**, **C)**, **D)** em negrito e linhas separadas).
+2. Se a resposta estiver INCORRETA:
+   - Diga APENAS: "Sua resposta está incorreta. Tente novamente! Qual das alternativas você escolheria agora?"
+   - NÃO revele a alternativa correta ainda.
+   - NÃO avance para a próxima questão ainda.`;
     promptSuffix = `Resposta do estudante (1ª tentativa): ${question}`;
 
   } else if (sessionMode === 'simulado_segunda_tentativa') {
-    // 2ª tentativa — se incorreto, revelar a resposta e avançar
-    modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO SIMULADO: 2ª TENTATIVA]
+    modeInstruction = `[MODO ATIVO: SIMULADO DE PROVA — AVALIANDO 2ª TENTATIVA]
+VOCÊ ESTÁ NO MODO SIMULADO DE PROVA.
 O estudante respondeu "${question}" pela SEGUNDA VEZ à mesma questão.
-Analise o histórico para identificar a questão e a alternativa correta.
+NUNCA GERE RESUMO DE CONTEÚDO.
 
 REGRAS ABSOLUTAS:
-1. Se CORRETA: confirme brevemente (1-2 frases) e apresente a PRÓXIMA questão
-2. Se INCORRETA na segunda tentativa:
-   - Revele: "A resposta correta é **X)**. [explicação em 1-2 frases]"
-   - Apresente a PRÓXIMA questão
-3. NUNCA peça uma terceira tentativa
-4. Para a PRÓXIMA questão, usar formatação em negrito:
-   **Questão N:** [enunciado]
-   **A)** [alternativa]
-   **B)** [alternativa]
-   **C)** [alternativa]
-   **D)** [alternativa]
-5. NUNCA inclua seção de Referências
-6. Se já foram feitas 3 questões, encerrar com:
-   "Deseja continuar o simulado, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"`;
+1. Se a resposta estiver CORRETA:
+   - Confirme brevemente (1-2 frases) e apresente a PRÓXIMA questão.
+2. Se a resposta estiver INCORRETA pela segunda vez:
+   - Revele a resposta correta: "A alternativa correta é a **X)**. [explicação em 1-2 frases]"
+   - Apresente a PRÓXIMA questão (**Questão N:** com **A)**, **B)**, **C)**, **D)** em negrito e linhas separadas).`;
     promptSuffix = `Resposta do estudante (2ª tentativa): ${question}`;
 
   } else if (sessionMode === 'resumo_aprofundar') {
     const targetTopic = themeToUse || 'o tema estudado anteriormente';
-    modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO APROFUNDAMENTO]
-O estudante quer aprofundar o tema "${targetTopic}".
-NÃO pergunte o tema novamente.
-NÃO volte ao menu principal.
-NÃO exiba a mensagem de boas-vindas.
 Gere uma explicação MAIS DETALHADA e COMPLETA sobre "${targetTopic}".
 
 REGRAS ABSOLUTAS:
