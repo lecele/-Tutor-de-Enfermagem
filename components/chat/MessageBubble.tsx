@@ -105,6 +105,10 @@ function UserBubble({ content }: { content: string }) {
   );
 }
 
+// Labels exatos que devem ser renderizados como botões interativos (menu principal)
+// Qualquer outro item de lista (conteúdo, referências, exemplos) renderiza como <li> normal
+const MENU_BUTTON_RE = /^(resumo de conteúdo|resumo|simulado de prova|simulado|informações da disciplina|informações|encerrar sessão|encerrar|aprofundar|aprofundar este tema|aprofundar mais|escolher outro tema|outro tema|voltar ao menu principal|voltar ao menu|menu principal|continuar o simulado|continuar simulado|fazer outra pergunta|outra pergunta|repetir a pergunta)$/i;
+
 function AgentBubble({ content, sourcesFound, hasContext }: {
   content: string;
   sourcesFound?: number;
@@ -133,10 +137,13 @@ function AgentBubble({ content, sourcesFound, hasContext }: {
     // Renderiza itens de lista como botões quando são opções
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     li: ({ children, ...props }: any) => {
-      if (!isOptionMessage) return <li {...props}>{children}</li>;
-
       const label = extractText(children).trim();
       if (!label) return <li {...props}>{children}</li>;
+
+      // Renderiza como botão APENAS se for uma opção de menu conhecida
+      if (!MENU_BUTTON_RE.test(label)) {
+        return <li {...props}>{children}</li>;
+      }
 
       // Itens informativos como "Ou qualquer outra dúvida..." não viram botões
       if (label.toLowerCase().startsWith('ou ')) {

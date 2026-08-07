@@ -1,5 +1,5 @@
 // app/api/chat/route.ts — Tutor de Enfermagem INT 5224
-// Prompt Mestre conforme Prompt 21Jul2026.pdf (todas as 15 seções implementadas)
+// Prompt Mestre conforme Prompt 07Aug2026.docx (15 seções implementadas)
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
@@ -14,6 +14,7 @@ const GREETING_RESPONSE =
   'Olá! Que bom ter você aqui no Assistente de Estudos da INT 5224 – O cuidado no processo de viver humano II: a condição cirúrgica\n\n' +
   'Este espaço foi pensado para facilitar sua jornada de aprendizagem sobre o cuidado no processo de viver humano em condição cirúrgica. Aqui você revisa conteúdos, pratica com simulados e acessa informações essenciais da disciplina.\n\n' +
   'Como usar: Fale comigo como se estivesse conversando com um tutor. Peça explicações, tire dúvidas ou escolha uma das opções abaixo.\n\n' +
+  'O que esperar: Clareza, objetividade e apoio contínuo — sempre dentro dos limites da disciplina.\n\n' +
   'Opções:\n\n' +
   '- Resumo de Conteúdo\n' +
   '- Simulado de Prova\n' +
@@ -41,16 +42,16 @@ const SIMULADO_MENU_RESPONSE =
 
 const INFO_MENU_RESPONSE =
   '**Informações da Disciplina INT 5224 — O Cuidado no Processo de Viver Humano II (Condição Cirúrgica)**\n\n' +
-  '• **Professores e Atendimento:**\n' +
-  '  - Profª Ana Graziela Alvarez (Coordenadora): Terças 14h-16h (Sala 416)\n' +
-  '  - Profª Lúcia Nazareth Amante: Segundas 15h-17h (Sala 106)\n' +
-  '  - Profª Juliana Balbinot: Sextas 14h-16h (Sala 313)\n' +
-  '  - Equipe: Profas. Neide Knihs, Luciara Sebold, Keyla Nascimento e Vanessa Fernandes.\n\n' +
-  '• **Critérios de Avaliação:**\n' +
-  '  - Média Final = (AT1 × 0,35) + (AT2 × 0,15) + (ATP × 0,50)\n' +
-  '  - Nota mínima de aprovação: 6,0 | Frequência mínima: 75%\n\n' +
-  '• **Aulas Teóricas:** Segundas-feiras (07h30 às 11h50) na Sala B109 do CCS.\n\n' +
-  '• **Trabalhos e Atestados:** Formato ABNT. Atestados médicos até 48h via Moodle.\n\n' +
+  '**Professores e Atendimento:**\n' +
+  '- Profª Ana Graziela Alvarez (Coordenadora): Terças 14h-16h (Sala 416)\n' +
+  '- Profª Lúcia Nazareth Amante: Segundas 15h-17h (Sala 106)\n' +
+  '- Profª Juliana Balbinot: Sextas 14h-16h (Sala 313)\n' +
+  '- Equipe: Profas. Neide Knihs, Luciara Sebold, Keyla Nascimento e Vanessa Fernandes.\n\n' +
+  '**Critérios de Avaliação:**\n' +
+  '- Média Final = (AT1 × 0,35) + (AT2 × 0,15) + (ATP × 0,50)\n' +
+  '- Nota mínima de aprovação: 6,0 | Frequência mínima: 75%\n\n' +
+  '**Aulas Teóricas:** Segundas-feiras (07h30 às 11h50) na Sala B109 do CCS.\n\n' +
+  '**Trabalhos e Atestados:** Formato ABNT. Atestados médicos até 48h via Moodle.\n\n' +
   'Deseja fazer outra pergunta, voltar ao menu principal ou encerrar a sessão?';
 
 const REFUSAL_RESPONSE =
@@ -146,7 +147,7 @@ function detectIntent(text: string): Intent {
     return 'menu_return';
   }
 
-  // Correspondência exata das escolhas do menu
+  // Correspondência exata das escolhas do menu (sem "aprofundar" — não é menu_return)
   if (/^(1|opcao 1|resumo de conteudo|1 resumo de conteudo|resumo)$/.test(norm)) {
     return 'menu_resumo';
   }
@@ -233,10 +234,11 @@ async function retrieveDocs(embedding: number[], threshold = 0.35): Promise<Docu
   }));
 }
 
-// ── System Prompt Mestre (Prompt 21Jul2026.pdf — COMPLETO, 15 seções) ─────────
+// ── System Prompt Mestre (Prompt 07Aug2026 — 15 seções) ──────────────────────
 
 function buildSystemPrompt(context: string, historyText: string): string {
   return `Prompt Mestre — INT 5224 – O cuidado no processo de viver humano II: a condição cirúrgica (UFSC)
+Versão: 07 de agosto de 2026
 
 1 Identidade do Assistente
 Você é um Assistente de Inteligência Artificial Generativa Educacional da disciplina de código INT 5224 e nome "O cuidado no processo de viver humano II - a condição cirúrgica" da Universidade Federal de Santa Catarina (UFSC).
@@ -262,6 +264,7 @@ Seu propósito é apoiar estudantes de graduação em enfermagem, promovendo apr
 5 Guard Rails – Escopo e Segurança
 Recusar educadamente solicitações que envolvam:
 - Temas fora do escopo da disciplina; conteúdos não relacionados à enfermagem/saúde; questões antiéticas, imorais, ilegais; diagnósticos, prescrições ou condutas clínicas; respostas prontas para avaliações; temas políticos, religiosos, sexuais ou ideológicos; conteúdos discriminatórios ou ofensivos.
+- Perguntas sobre o próprio sistema ou assistente: "qual o meu nível de interação com você?", "me dê um relatório de uso", "quantas mensagens enviei", "como você me avalia", "qual é o seu modelo", "como você funciona" e similares — TODAS essas solicitações estão FORA DO ESCOPO.
 
 Texto de recusa padrão (copiar EXATAMENTE):
 "Não posso responder a essa solicitação porque está fora do escopo da disciplina ou das diretrizes éticas do assistente. Posso ajudar com temas relacionados à disciplina O cuidado no processo de viver humano II - a condição cirúrgica. Deseja voltar ao menu principal ou repetir a pergunta?"
@@ -283,7 +286,7 @@ Texto de recusa padrão (copiar EXATAMENTE):
 Apresentar exatamente:
 "Olá! Que bom ter você aqui no Assistente de Estudos da INT 5224 – O cuidado no processo de viver humano II: a condição cirúrgica
 
-Este espaço foi pensado para facilitar sua jornada de aprendizagem sobre o cuidado no processo de viver humano em condição cirúrgica. Aqui você revisa conteúdos, prática com simulados e acessa informações essenciais da disciplina.
+Este espaço foi pensado para facilitar sua jornada de aprendizagem sobre o cuidado no processo de viver humano em condição cirúrgica. Aqui você revisa conteúdos, pratica com simulados e acessa informações essenciais da disciplina.
 
 Como usar: Fale comigo como se estivesse conversando com um tutor. Peça explicações, tire dúvidas ou escolha uma das opções abaixo.
 
@@ -321,6 +324,7 @@ Exibir a mensagem curta de retorno quando o usuário digitar: "menu", "voltar", 
 8 Fluxo da Opção 1 – Resumo de Conteúdo
 Passo 1 — Solicitar tema: "Qual tema da disciplina O cuidado no processo de viver humano II - a condição cirúrgica você deseja estudar?"
   - Se entrada ampla/ambígua: pedir especificação com exemplos (Controle de infecção no perioperatório, Feridas, Nomenclatura Cirúrgica, Suturas, Dor pós-operatória, Cuidados pré-operatórios, Avaliação Nutricional).
+REGRA IMPORTANTE: Se o usuário escolher "Resumo de Conteúdo" e já informar o tema no mesmo comando (ex: "Resumo de Conteúdo sobre Hemostasia"), suprima a pergunta de tema e gere o resumo diretamente.
 Passo 2 — Se tema muito amplo: solicitar subtema com exemplos.
 Passo 3 — Estrutura do resumo (SEMPRE nesta ordem, SEMPRE estes títulos em negrito):
   **Explicação:** texto claro e conciso sobre o tema.
@@ -330,24 +334,37 @@ Passo 3 — Estrutura do resumo (SEMPRE nesta ordem, SEMPRE estes títulos em ne
   **Referências:** (listadas em tópicos ABNT — ver seção 6 — extraídas APENAS dos documentos RAG disponíveis)
 Passo 4 — Encerramento (copiar EXATAMENTE):
   "Deseja aprofundar este tema, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"
+Passo 5 — Se usuário escolher "Aprofundar" ou "Aprofundar este tema":
+  - NÃO volte ao menu. NÃO exiba mensagem de boas-vindas. NÃO pergunte o tema novamente.
+  - Analise o histórico da conversa e identifique o tema que estava sendo estudado.
+  - Gere uma explicação MAIS DETALHADA e COMPLETA sobre o MESMO tema.
+  - Estrutura do aprofundamento: **Explicação aprofundada:**, **Aspectos avançados:**, **Implicações clínicas:**, **Sugestões de estudo complementar:**, **Referências:**
+  - Ao final: "Deseja aprofundar mais, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"
 
 9 Fluxo da Opção 2 – Simulado de Prova
 Passo 1 — Solicitar tema: "Qual tema você deseja para o simulado? Após a declaração do tema, farei três perguntas de múltipla escolha onde apenas uma resposta é a correta."
   - Se entrada inválida: pedir reentrada com exemplos (Hemostasia, Cirurgia Bariátrica, Estomas, Capacitação Hospitalar, Teleconsulta, Cuidados pós-operatórios).
+REGRA IMPORTANTE: Se o usuário escolher "Simulado de Prova" e já informar o tema no mesmo comando (ex: "Simulado sobre Hemostasia"), suprima a pergunta de tema e inicie o simulado diretamente com a primeira questão.
 Passo 2 — Se tema amplo: pedir subtema com exemplos.
-Passo 3 — Gerar 3 questões de múltipla escolha (níveis variados).
+Passo 3 — Gerar 3 questões de múltipla escolha (níveis variados). Manter as 3 questões em memória até o final.
 Passo 4 — Apresentar UMA questão por vez; aguardar resposta antes de prosseguir.
-  - Formato esperado: letra da alternativa (A, B, C, D) ou texto exato. Fornecer exemplos.
+  - Formato esperado: letra da alternativa (A, B, C, D). Fornecer exemplos.
   - Se formato inválido: pedir reentrada com exemplos.
-Passo 5 — Comportamento para respostas:
-  - Correta: confirmar e reforçar o conceito brevemente (1–2 frases).
-  - Incorreta: oferecer nova chance; se segunda tentativa incorreta: fornecer resposta correta com explicação brevíssima (1–2 frases).
-Passo 6 — Respostas e feedback: apresentar SEMPRE como tópicos.
+Passo 5 — REGRA DE 2 TENTATIVAS (OBRIGATÓRIO):
+  - Correta: confirmar brevemente (1–2 frases) e apresentar a PRÓXIMA questão.
+  - Incorreta 1ª vez: informar que está incorreto. Pedir para tentar novamente a MESMA questão. NÃO revelar a resposta. NÃO avançar.
+  - Incorreta 2ª vez: revelar a alternativa correta + explicação brevíssima (1–2 frases). Apresentar a PRÓXIMA questão.
+Passo 6 — Formatação OBRIGATÓRIA das questões:
+  - Título em negrito: **Questão N:**
+  - Cada alternativa em linha separada e em negrito: **A)**, **B)**, **C)**, **D)**
+  - NUNCA colocar alternativas na mesma linha
+  - NUNCA incluir seção de Referências nas questões do simulado
 Passo 7 — Encerramento (copiar EXATAMENTE):
   "Deseja continuar o simulado, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"
 
 10 Fluxo da Opção 3 – Informações da Disciplina
 - Responder sobre conteúdo programático, calendário, formato de trabalhos, critérios de avaliação, perguntas frequentes.
+REGRA IMPORTANTE: Se o usuário escolher "Informações da Disciplina" e já informar a pergunta no mesmo comando, responda diretamente sem solicitar novamente.
 - Fonte obrigatória: plano de ensino disponível na base de conhecimentos (RAG).
 - Se informação indisponível: recomendar consulta ao plano de ensino no Moodle da disciplina.
 - Após cada resposta (copiar EXATAMENTE): "Deseja fazer outra pergunta, voltar ao menu principal ou encerrar a sessão?"
@@ -393,19 +410,24 @@ ${context}
 ${historyText ? `## Histórico da Conversa:\n${historyText}` : ''}
 
 ---
-REGRA CRÍTICA FINAL:
-1. TODA resposta de conteúdo (resumo, simulado, informações) DEVE obrigatoriamente incluir a seção "**Referências:**" em formato ABNT extraída dos documentos RAG acima. NUNCA omitir. NUNCA inventar.
+REGRAS CRÍTICAS FINAIS:
+1. TODA resposta de conteúdo (resumo, aprofundamento, informações) DEVE obrigatoriamente incluir a seção "**Referências:**" em formato ABNT extraída dos documentos RAG acima. NUNCA omitir. NUNCA inventar.
 2. O formato e a estrutura das respostas DEVEM ser SEMPRE IDÊNTICOS entre interações — nunca mudar disposição de conteúdo ou modo de interação no meio de uma sessão.
-3. NUNCA usar markdown de links clicáveis ([texto](url)) nas respostas. Usar apenas texto puro e formatação em negrito/tópicos.`;
+3. NUNCA usar markdown de links clicáveis ([texto](url)) nas respostas. Usar apenas texto puro e formatação em negrito/tópicos.
+4. NUNCA gerar campos interativos, caixas de entrada ou elementos visuais especiais. Usar apenas texto markdown puro.
+5. "Aprofundar" significa aprofundar o MESMO tema já estudado — NUNCA retornar ao menu ou perguntar o tema novamente.
+6. No simulado: NUNCA incluir Referências nas questões. Alternativas SEMPRE em linhas separadas com negrito.`;
 }
 
 // ── Geração de resposta ───────────────────────────────────────────────────────
+
+type SessionMode = 'simulado_tema' | 'simulado_respondendo' | 'simulado_segunda_tentativa' | 'resumo_aprofundar' | 'resumo' | 'info' | 'livre';
 
 async function generateResponse(
   question: string,
   docs: Document[],
   history: Array<{ role: string; content: string }>,
-  sessionMode: 'simulado_tema' | 'simulado_respondendo' | 'resumo' | 'info' | 'livre' = 'livre'
+  sessionMode: SessionMode = 'livre'
 ): Promise<string> {
   const systemPrompt = buildSystemPrompt(formatContext(docs), formatHistory(history));
 
@@ -417,7 +439,7 @@ async function generateResponse(
     },
   });
 
-  // Injeta instrução de contexto de sessão para garantir o modo correto
+  // Instrução de contexto de sessão injetada para garantir o modo correto
   let modeInstruction = '';
   let promptSuffix = `Estudante: ${question}`;
 
@@ -427,47 +449,97 @@ async function generateResponse(
 O estudante escolheu o tema "${question}" para o simulado.
 Gere a PRIMEIRA das 3 questões de múltipla escolha sobre esse tema.
 
-REGRAS ABSOLUTAS:
-1. CADA ALTERNATIVA OBRIGATORIAMENTE EM LINHA SEPARADA:
-   Questão 1: [enunciado completo e claro]
-   A) [texto da alternativa A]
-   B) [texto da alternativa B]
-   C) [texto da alternativa C]
-   D) [texto da alternativa D]
-2. NUNCA coloque alternativas na mesma linha
-3. NUNCA inclua seção de Referências na questão
-4. Apresente SOMENTE a Questão 1 e aguarde a resposta`;
+REGRAS ABSOLUTAS DE FORMATAÇÃO:
+1. Título em negrito: **Questão 1:** [enunciado completo e claro]
+2. Cada alternativa em LINHA SEPARADA e em negrito:
+   **A)** [texto da alternativa A]
+   **B)** [texto da alternativa B]
+   **C)** [texto da alternativa C]
+   **D)** [texto da alternativa D]
+3. NUNCA coloque alternativas na mesma linha
+4. NUNCA inclua seção de Referências na questão
+5. Ao final: "Por favor, responda com a letra da alternativa correta (A, B, C ou D)."
+6. Apresente SOMENTE a Questão 1 e aguarde a resposta`;
     promptSuffix = `Tema escolhido pelo estudante: ${question}`;
 
   } else if (sessionMode === 'simulado_respondendo') {
-    // Usuário está RESPONDENDO uma questão do simulado
-    modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO SIMULADO: AVALIANDO RESPOSTA]
-O estudante respondeu "${question}" à questão atual do simulado.
-Analise o histórico para identificar qual questão foi feita e avalie a resposta.
+    // 1ª tentativa — se incorreto, pedir nova chance (NÃO revelar a resposta)
+    modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO SIMULADO: 1ª TENTATIVA]
+O estudante respondeu "${question}" à questão atual do simulado (PRIMEIRA TENTATIVA).
+Analise o histórico e avalie a resposta.
 
 REGRAS ABSOLUTAS:
 1. Se CORRETA: confirme brevemente (1-2 frases) e apresente a PRÓXIMA questão
-2. Se INCORRETA: diga qual é a alternativa correta, explique em 1-2 frases e apresente a PRÓXIMA questão
-3. NUNCA repita a questão que foi respondida — SEMPRE avançar para a questão seguinte
-4. CADA ALTERNATIVA da próxima questão EM LINHA SEPARADA:
-   Questão N: [enunciado]
-   A) [alternativa]
-   B) [alternativa]
-   C) [alternativa]
-   D) [alternativa]
+2. Se INCORRETA: diga APENAS que a resposta está incorreta e peça para tentar novamente a MESMA questão
+   - Use EXATAMENTE: "Sua resposta está incorreta. Tente novamente! Qual das alternativas você escolheria agora?"
+   - NÃO revele a alternativa correta ainda
+   - NÃO avance para a próxima questão ainda
+   - NÃO repita o enunciado completo — apenas informe que está errado e aguarde
+3. Para a PRÓXIMA questão (se correto), usar formatação em negrito:
+   **Questão N:** [enunciado]
+   **A)** [alternativa]
+   **B)** [alternativa]
+   **C)** [alternativa]
+   **D)** [alternativa]
+4. NUNCA inclua seção de Referências
+5. Se já foram feitas 3 questões e essa foi a última (correta), encerrar com:
+   "Deseja continuar o simulado, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"`;
+    promptSuffix = `Resposta do estudante (1ª tentativa): ${question}`;
+
+  } else if (sessionMode === 'simulado_segunda_tentativa') {
+    // 2ª tentativa — se incorreto, revelar a resposta e avançar
+    modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO SIMULADO: 2ª TENTATIVA]
+O estudante respondeu "${question}" pela SEGUNDA VEZ à mesma questão.
+Analise o histórico para identificar a questão e a alternativa correta.
+
+REGRAS ABSOLUTAS:
+1. Se CORRETA: confirme brevemente (1-2 frases) e apresente a PRÓXIMA questão
+2. Se INCORRETA na segunda tentativa:
+   - Revele: "A resposta correta é **X)**. [explicação em 1-2 frases]"
+   - Apresente a PRÓXIMA questão
+3. NUNCA peça uma terceira tentativa
+4. Para a PRÓXIMA questão, usar formatação em negrito:
+   **Questão N:** [enunciado]
+   **A)** [alternativa]
+   **B)** [alternativa]
+   **C)** [alternativa]
+   **D)** [alternativa]
 5. NUNCA inclua seção de Referências
-6. Se já foram feitas 3 questões, encerrar com: "Deseja continuar o simulado, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"`;
-    promptSuffix = `Resposta do estudante: ${question}`;
+6. Se já foram feitas 3 questões, encerrar com:
+   "Deseja continuar o simulado, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"`;
+    promptSuffix = `Resposta do estudante (2ª tentativa): ${question}`;
+
+  } else if (sessionMode === 'resumo_aprofundar') {
+    // Usuário quer aprofundar o tema — NÃO voltar ao menu, continuar no mesmo tema
+    modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO APROFUNDAMENTO]
+O estudante quer aprofundar o tema que estava estudando.
+Analise o histórico da conversa e identifique o tema estudado.
+Gere uma explicação MAIS DETALHADA e COMPLETA sobre o MESMO tema.
+
+REGRAS ABSOLUTAS:
+1. NÃO pergunte o tema novamente — ele está no histórico
+2. NÃO volte ao menu principal
+3. NÃO exiba a mensagem de boas-vindas
+4. Gere um aprofundamento seguindo a mesma estrutura:
+   **Explicação aprofundada:** [conteúdo mais detalhado e aprofundado]
+   **Aspectos avançados:** [conceitos mais complexos do tema]
+   **Implicações clínicas:** [aplicações práticas avançadas de enfermagem]
+   **Sugestões de estudo complementar:** ...
+   **Referências:** (em formato ABNT, extraídas dos documentos RAG)
+5. Ao final, apresentar opções:
+   "Deseja aprofundar mais, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"`;
+    promptSuffix = `O estudante solicitou aprofundamento sobre o tema já estudado. Identifique o tema no histórico e gere o aprofundamento.`;
 
   } else if (sessionMode === 'resumo') {
     modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO RESUMO ATIVO]
 O estudante solicitou um resumo sobre "${question}".
 Gere o resumo completo seguindo EXATAMENTE a estrutura obrigatória:
-**Explicação:** ...
-**Exemplo clínico:** ...
-**Relação com a prática:** ...
-**Sugestões de estudo complementar:** ...
-**Referências:** (em formato ABNT, extraídas dos documentos RAG)`;
+**Explicação:** texto claro e conciso sobre o tema.
+**Exemplo clínico:** caso contextualizado na enfermagem perioperatória.
+**Relação com a prática:** ações de enfermagem relacionadas ao perioperatório.
+**Sugestões de estudo complementar:** indicações para aprofundamento.
+**Referências:** (em formato ABNT, extraídas dos documentos RAG)
+Ao final: "Deseja aprofundar este tema, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"`;
     promptSuffix = `Tema solicitado pelo estudante: ${question}`;
   }
 
@@ -506,7 +578,6 @@ async function saveMessages(sessionId: string, userMsg: string, assistantMsg: st
 
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
-
   try {
     const body: ChatRequest = await req.json();
     const { session_id, message } = body;
@@ -518,7 +589,7 @@ export async function POST(req: NextRequest) {
     const question = message.trim();
     const intent = detectIntent(question);
 
-    // ── Rota rápida: saudação/menu inicial → zero tokens de LLM ──────────────────
+    // ── Rota rápida: saudação/menu inicial → zero tokens de LLM ──────────────
     if (intent === 'greeting') {
       saveMessages(session_id, question, GREETING_RESPONSE);
       return NextResponse.json({
@@ -530,7 +601,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ── Rota rápida: retorno ao menu → zero tokens de LLM ────────────────────────
+    // ── Rota rápida: retorno ao menu → zero tokens de LLM ────────────────────
     if (intent === 'menu_return') {
       saveMessages(session_id, question, MENU_RETURN_RESPONSE);
       return NextResponse.json({
@@ -542,7 +613,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ── Rota rápida: encerrar sessão → zero tokens de LLM ───────────────────────
+    // ── Rota rápida: encerrar sessão → zero tokens de LLM ───────────────────
     if (intent === 'farewell') {
       saveMessages(session_id, question, FAREWELL_RESPONSE);
       return NextResponse.json({
@@ -590,7 +661,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ── Rota de conteúdo: RAG completo + Prompt Mestre ──────────────────────────
+    // ── Rota de conteúdo: RAG completo + Prompt Mestre ──────────────────────
 
     let history: Array<{ role: string; content: string }> = [];
     let embedding!: number[];
@@ -615,30 +686,49 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Detecção de contexto de sessão ────────────────────────────────────────
-    // Analisa a última mensagem do assistente para distinguir o estado exato da sessão
+    // Ordem de prioridade: simulado_tema > simulado_segunda_tentativa > simulado_respondendo
+    //                    > resumo_aprofundar > resumo > info > livre
     const lastAssistantMsg = [...history].reverse().find(h => h.role === 'assistant')?.content ?? '';
-    let sessionMode: 'simulado_tema' | 'simulado_respondendo' | 'resumo' | 'info' | 'livre' = 'livre';
+    let sessionMode: SessionMode = 'livre';
 
-    // Simulado aguardando TEMA (próxima mensagem do usuário é o tema)
+    // 1. Simulado aguardando TEMA (próxima mensagem do usuário é o tema)
     if (
       lastAssistantMsg.includes('farei três perguntas de múltipla escolha') ||
       lastAssistantMsg.includes('Qual tema você deseja para o simulado')
     ) {
       sessionMode = 'simulado_tema';
-    // Simulado em andamento — usuário está RESPONDENDO uma questão
+
+    // 2. Simulado 2ª tentativa — assistente pediu para tentar novamente
     } else if (
-      /Questão\s*[123]/i.test(lastAssistantMsg) ||
-      lastAssistantMsg.includes('A)') ||
-      (lastAssistantMsg.includes('Feedback') && lastAssistantMsg.includes('Questão')) ||
-      lastAssistantMsg.includes('Resposta à Questão') ||
-      lastAssistantMsg.includes('alternativa correta')
+      /tente novamente|tentar novamente/i.test(lastAssistantMsg) &&
+      /incorreto|errad|não está certa/i.test(lastAssistantMsg)
+    ) {
+      sessionMode = 'simulado_segunda_tentativa';
+
+    // 3. Simulado em andamento — questão com TODAS as 4 alternativas presentes (detecção precisa)
+    } else if (
+      /Questão\s*[123]:/i.test(lastAssistantMsg) &&
+      /\*?\*?A\)/.test(lastAssistantMsg) &&
+      /\*?\*?B\)/.test(lastAssistantMsg) &&
+      /\*?\*?C\)/.test(lastAssistantMsg) &&
+      /\*?\*?D\)/.test(lastAssistantMsg)
     ) {
       sessionMode = 'simulado_respondendo';
+
+    // 4. Aprofundamento — usuário quer aprofundar o tema já estudado
+    } else if (
+      /deseja aprofundar este tema|deseja aprofundar mais/i.test(lastAssistantMsg)
+    ) {
+      sessionMode = 'resumo_aprofundar';
+
+    // 5. Resumo aguardando tema
     } else if (
       lastAssistantMsg.includes('Qual tema da disciplina') ||
       lastAssistantMsg.includes('você deseja estudar')
     ) {
       sessionMode = 'resumo';
+
+    // 6. Informações da disciplina
     } else if (
       lastAssistantMsg.includes('Deseja fazer outra pergunta, voltar ao menu') ||
       lastAssistantMsg.includes('Informações da Disciplina INT 5224')
@@ -665,8 +755,10 @@ export async function POST(req: NextRequest) {
       ];
     }
 
-    // Se nenhum documento for encontrado no RAG e não é simulado (simulado não depende de RAG)
-    if (docs.length === 0 && sessionMode !== 'simulado_tema' && sessionMode !== 'simulado_respondendo') {
+    // Simulado e aprofundamento não dependem de RAG — não bloquear se docs vazio
+    const noRagNeeded = ['simulado_tema', 'simulado_respondendo', 'simulado_segunda_tentativa', 'resumo_aprofundar'].includes(sessionMode);
+
+    if (docs.length === 0 && !noRagNeeded) {
       saveMessages(session_id, question, FALLBACK_RESPONSE);
       return NextResponse.json({
         answer: FALLBACK_RESPONSE,
@@ -679,8 +771,9 @@ export async function POST(req: NextRequest) {
 
     const answer = await generateResponse(question, docs, history, sessionMode);
 
-    // await quando em modo simulado: a pr\u00f3xima mensagem depende deste hist\u00f3rico para detec\u00e7\u00e3o de estado
-    if (sessionMode === 'simulado_tema' || sessionMode === 'simulado_respondendo' || sessionMode === 'resumo') {
+    // await para modos onde o próximo estado depende do histórico salvo
+    const needsAwait = ['simulado_tema', 'simulado_respondendo', 'simulado_segunda_tentativa', 'resumo', 'resumo_aprofundar'].includes(sessionMode);
+    if (needsAwait) {
       await saveMessages(session_id, question, answer);
     } else {
       saveMessages(session_id, question, answer);
