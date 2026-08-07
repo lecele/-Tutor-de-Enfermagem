@@ -773,15 +773,13 @@ export async function POST(req: NextRequest) {
         sessionMode = 'simulado_tema';
       } else if (
         /tente novamente|tentar novamente/i.test(lastAssistantMsg) &&
-        /incorreto|errad|não está certa/i.test(lastAssistantMsg)
+        /incorret|não está cert/i.test(lastAssistantMsg)
       ) {
         sessionMode = 'simulado_segunda_tentativa';
       } else if (
-        /Questão\s*[123]:/i.test(lastAssistantMsg) &&
-        /\*?\*?A\)/.test(lastAssistantMsg) &&
-        /\*?\*?B\)/.test(lastAssistantMsg) &&
-        /\*?\*?C\)/.test(lastAssistantMsg) &&
-        /\*?\*?D\)/.test(lastAssistantMsg)
+        /Questão\s*[12345]:/i.test(lastAssistantMsg) ||
+        (/\*?\*?[A-D]\)/i.test(lastAssistantMsg) && /responda com a letra|qual das alternativas/i.test(lastAssistantMsg)) ||
+        (/Questão/i.test(lastAssistantMsg) && /\*?\*?A\)/i.test(lastAssistantMsg))
       ) {
         sessionMode = 'simulado_respondendo';
       } else if (
