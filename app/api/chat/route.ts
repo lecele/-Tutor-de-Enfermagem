@@ -126,7 +126,7 @@ interface Document {
 
 // ── Roteamento por intenção (sem LLM) ────────────────────────────────────────
 
-type Intent = 'greeting' | 'menu_return' | 'farewell' | 'menu_resumo' | 'menu_resumo_inline' | 'menu_simulado' | 'menu_simulado_inline' | 'menu_info' | 'aprofundar' | 'content';
+type Intent = 'greeting' | 'menu_return' | 'farewell' | 'menu_resumo' | 'menu_simulado' | 'menu_info' | 'aprofundar' | 'content';
 
 function detectIntent(text: string): Intent {
   const norm = text
@@ -164,16 +164,6 @@ function detectIntent(text: string): Intent {
   // Aprofundamento do tema atual (NÃO é retorno ao menu)
   if (/^(aprofundar|aprofundar este tema|aprofundar mais|aprofundar o tema)$/.test(norm)) {
     return 'aprofundar';
-  }
-
-  // Simulado com tema inline: "Simulado sobre Hemostasia", "Quero um simulado de Feridas"
-  if (/\bsimulad[ao]\b/.test(norm) && /\b(sobre|de)\b/.test(norm) && !(/^(simulado de prova|2|opcao 2)$/.test(norm))) {
-    return 'menu_simulado_inline';
-  }
-
-  // Resumo com tema inline: "Resumo sobre Feridas", "Resumo de Hemostasia"
-  if (/\b(resumo|resumir)\b/.test(norm) && /\b(sobre|de)\b/.test(norm) && !(/^(resumo de conteudo|1|opcao 1)$/.test(norm))) {
-    return 'menu_resumo_inline';
   }
 
   const words = norm.split(/\s+/).filter(Boolean);
@@ -408,14 +398,14 @@ Responder EXATAMENTE: "Sessão encerrada. Bons estudos! Estarei aqui sempre quan
 15 Instruções Técnicas
 - Entradas do usuário: normalizar espaços, maiúsculas/minúsculas e acentos antes da validação.
 - Referências: extrair metadados dos arquivos RAG (autor, título, ano, páginas) e montar em ABNT; se metadado ausente, omitir ou indicar "Informação não encontrada." conforme relevância.
-- Exemplo OBRIGATÓRIO de saída formatada para resumos (MANTER ESTA ORDEM EXATA):
+- Exemplo OBRIGATÓRIO de saída formatada para resumos:
   **Explicação:** texto conciso...
   **Exemplo clínico:** caso X...
   **Relação com a prática:** ações de enfermagem...
+  **Sugestões de estudo complementar:** ...
   **Referências:**
   - SOBRENOME, Prenomes. Título do documento. Ano. Seção consultada: página(s).
   - Informação não disponível no documento consultado.
-  **Sugestões de estudo complementar:** ...
 
 ---
 
@@ -442,7 +432,8 @@ async function generateResponse(
   question: string,
   docs: Document[],
   history: Array<{ role: string; content: string }>,
-  sessionMode: SessionMode = 'livre'
+  sessionMode: SessionMode = 'livre',
+  inlineTheme?: string
 ): Promise<string> {
   const systemPrompt = buildSystemPrompt(formatContext(docs), formatHistory(history));
 
@@ -454,18 +445,21 @@ async function generateResponse(
     },
   });
 
+  const themeToUse = inlineTheme || question;
+
   // Instrução de contexto de sessão injetada para garantir o modo correto
   let modeInstruction = '';
   let promptSuffix = `Estudante: ${question}`;
 
   if (sessionMode === 'simulado_tema') {
-    // Usuário acabou de informar o TEMA — gerar Questão 1
+    // Usuário informou o TEMA (diretamente ou via atalho inline) — gerar Questão 1
     modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO SIMULADO: GERAR QUESTÃO 1]
-O estudante escolheu o tema "${question}" para o simulado.
+O estudante escolheu o tema "${themeToUse}" para o simulado.
+NÃO pergunte o tema novamente. Inicie DIRETAMENTE com a Questão 1 do simulado sobre "${themeToUse}".
 Gere a PRIMEIRA das 3 questões de múltipla escolha sobre esse tema.
 
 REGRAS ABSOLUTAS DE FORMATAÇÃO:
-1. Título em negrito: **Questão 1:** [enunciado completo e claro]
+1. Título em negrito: **Questão 1:** [enunciado completo e claro sobre ${themeToUse}]
 2. Cada alternativa em LINHA SEPARADA e em negrito:
    **A)** [texto da alternativa A]
    **B)** [texto da alternativa B]
@@ -475,7 +469,7 @@ REGRAS ABSOLUTAS DE FORMATAÇÃO:
 4. NUNCA inclua seção de Referências na questão
 5. Ao final: "Por favor, responda com a letra da alternativa correta (A, B, C ou D)."
 6. Apresente SOMENTE a Questão 1 e aguarde a resposta`;
-    promptSuffix = `Tema escolhido pelo estudante: ${question}`;
+    promptSuffix = `Tema escolhido pelo estudante: ${themeToUse}`;
 
   } else if (sessionMode === 'simulado_respondendo') {
     // 1ª tentativa — se incorreto, pedir nova chance (NÃO revelar a resposta)
@@ -547,15 +541,15 @@ REGRAS ABSOLUTAS:
 
   } else if (sessionMode === 'resumo') {
     modeInstruction = `[INSTRUÇÃO OBRIGATÓRIA — MODO RESUMO ATIVO]
-O estudante solicitou um resumo sobre "${question}".
-Gere o resumo completo seguindo EXATAMENTE esta ordem e estrutura (NÃO altere a ordem):
+O estudante solicitou um resumo sobre "${themeToUse}".
+NÃO pergunte o tema novamente. Gere o resumo completo sobre "${themeToUse}" seguindo EXATAMENTE a estrutura obrigatória:
 **Explicação:** texto claro e conciso sobre o tema.
 **Exemplo clínico:** caso contextualizado na enfermagem perioperatória.
 **Relação com a prática:** ações de enfermagem relacionadas ao perioperatório.
-**Referências:** (em formato ABNT, extraídas dos documentos RAG — OBRIGATÓRIO antes de Sugestões)
 **Sugestões de estudo complementar:** indicações para aprofundamento.
+**Referências:** (em formato ABNT, extraídas dos documentos RAG)
 Ao final: "Deseja aprofundar este tema, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"`;
-    promptSuffix = `Tema solicitado pelo estudante: ${question}`;
+    promptSuffix = `Tema solicitado pelo estudante: ${themeToUse}`;
   }
 
   const prompt = modeInstruction
@@ -701,44 +695,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ── Rota de tema inline: Simulado sobre X → inicia simulado direto ────────
-    if (intent === 'menu_simulado_inline') {
-      // Extrair tema: tudo após "sobre", "de" excluindo "prova"
-      const topicMatch = question.match(/(?:simulad[oa])\s+(?:sobre|de)\s+(.+)/i);
-      const topic = topicMatch ? topicMatch[1].trim() : question;
-      let histSim: Array<{ role: string; content: string }> = [];
-      let embSim!: number[];
-      try {
-        [histSim, embSim] = await Promise.all([getSessionHistory(session_id), embedQuery(topic)]);
-      } catch { embSim = await embedQuery(topic); }
-      const docsSim = await retrieveDocs(embSim, 0.35);
-      const ansSim = await generateResponse(topic, docsSim, histSim, 'simulado_tema');
-      await saveMessages(session_id, question, ansSim);
-      return NextResponse.json({
-        answer: ansSim, sources_found: docsSim.length, has_context: docsSim.length > 0,
-        chat_history_length: histSim.length + 2, processing_time_ms: Date.now() - startTime,
-      });
-    }
-
-    // ── Rota de tema inline: Resumo sobre X → gera resumo direto ─────────────
-    if (intent === 'menu_resumo_inline') {
-      // Extrair tema: tudo após "sobre", "de"
-      const topicMatch = question.match(/(?:resumo|resumir)\s+(?:sobre|de)\s+(.+)/i);
-      const topic = topicMatch ? topicMatch[1].trim() : question;
-      let histRes: Array<{ role: string; content: string }> = [];
-      let embRes!: number[];
-      try {
-        [histRes, embRes] = await Promise.all([getSessionHistory(session_id), embedQuery(topic)]);
-      } catch { embRes = await embedQuery(topic); }
-      const docsRes = await retrieveDocs(embRes, 0.35);
-      const ansRes = await generateResponse(topic, docsRes, histRes, 'resumo');
-      await saveMessages(session_id, question, ansRes);
-      return NextResponse.json({
-        answer: ansRes, sources_found: docsRes.length, has_context: docsRes.length > 0,
-        chat_history_length: histRes.length + 2, processing_time_ms: Date.now() - startTime,
-      });
-    }
-
     // ── Rota de conteúdo: RAG completo + Prompt Mestre ──────────────────────
 
     let history: Array<{ role: string; content: string }> = [];
@@ -764,54 +720,87 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Detecção de contexto de sessão ────────────────────────────────────────
-    // Ordem de prioridade: simulado_tema > simulado_segunda_tentativa > simulado_respondendo
-    //                    > resumo_aprofundar > resumo > info > livre
+    // Prioridade: Atalho Inline na mensagem do estudante > Estado da sessão (última msg do assistente)
     const lastAssistantMsg = [...history].reverse().find(h => h.role === 'assistant')?.content ?? '';
     let sessionMode: SessionMode = 'livre';
+    let inlineTheme = '';
 
-    // 1. Simulado aguardando TEMA (próxima mensagem do usuário é o tema)
-    if (
-      lastAssistantMsg.includes('farei três perguntas de múltipla escolha') ||
-      lastAssistantMsg.includes('Qual tema você deseja para o simulado')
-    ) {
-      sessionMode = 'simulado_tema';
+    const questionNorm = question
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
 
-    // 2. Simulado 2ª tentativa — assistente pediu para tentar novamente
-    } else if (
-      /tente novamente|tentar novamente/i.test(lastAssistantMsg) &&
-      /incorreto|errad|não está certa/i.test(lastAssistantMsg)
-    ) {
-      sessionMode = 'simulado_segunda_tentativa';
+    // 0. Detecção de Atalho / Tema Inline na mensagem do estudante
+    // A. Simulado com tema inline (ex: "Simulado sobre Hemostasia", "Simulado de Suturas", "2 - Feridas", "Quero um simulado sobre Estomas")
+    const simuladoInlineMatch = questionNorm.match(/^(?:quero\s+(?:um\s+)?)?(?:fazer\s+)?(?:simulado(?: de prova)?|opcao 2|2)\s*(?:sobre|de|da|do|com|-|:)?\s*(.+)$/i);
+    if (simuladoInlineMatch) {
+      const topicCandidate = simuladoInlineMatch[1].trim();
+      if (topicCandidate.length > 0 && !/^(de prova|prova)$/i.test(topicCandidate)) {
+        sessionMode = 'simulado_tema';
+        inlineTheme = question.replace(/^(?:quero\s+(?:um\s+)?)?(?:fazer\s+)?(?:simulado(?: de prova)?|opcao 2|2)\s*(?:sobre|de|da|do|com|-|:)?\s*/i, '').trim();
+      }
+    }
 
-    // 3. Simulado em andamento — questão com TODAS as 4 alternativas presentes (detecção precisa)
-    } else if (
-      /Questão\s*[123]:/i.test(lastAssistantMsg) &&
-      /\*?\*?A\)/.test(lastAssistantMsg) &&
-      /\*?\*?B\)/.test(lastAssistantMsg) &&
-      /\*?\*?C\)/.test(lastAssistantMsg) &&
-      /\*?\*?D\)/.test(lastAssistantMsg)
-    ) {
-      sessionMode = 'simulado_respondendo';
+    // B. Resumo com tema inline (ex: "Resumo sobre Feridas", "Resumo de Suturas", "1 - Hemostasia", "Quero um resumo sobre Dor")
+    if (sessionMode === 'livre') {
+      const resumoInlineMatch = questionNorm.match(/^(?:quero\s+(?:um\s+)?)?(?:fazer\s+)?(?:resumo(?: de conteudo)?|opcao 1|1)\s*(?:sobre|de|da|do|com|-|:)?\s*(.+)$/i);
+      if (resumoInlineMatch) {
+        const topicCandidate = resumoInlineMatch[1].trim();
+        if (topicCandidate.length > 0 && !/^(de conteudo|conteudo)$/i.test(topicCandidate)) {
+          sessionMode = 'resumo';
+          inlineTheme = question.replace(/^(?:quero\s+(?:um\s+)?)?(?:fazer\s+)?(?:resumo(?: de conteudo)?|opcao 1|1)\s*(?:sobre|de|da|do|com|-|:)?\s*/i, '').trim();
+        }
+      }
+    }
 
-    // 4. Aprofundamento — usuário quer aprofundar o tema já estudado
-    } else if (
-      /deseja aprofundar este tema|deseja aprofundar mais/i.test(lastAssistantMsg)
-    ) {
-      sessionMode = 'resumo_aprofundar';
+    // C. Informações com tema/pergunta inline (ex: "Informações sobre avaliações", "3 - professores")
+    if (sessionMode === 'livre') {
+      const infoInlineMatch = questionNorm.match(/^(?:quero\s+(?:saber\s+)?)?(?:informacoes|informacao|opcao 3|3)\s*(?:sobre|de|da|do|com|-|:)?\s*(.+)$/i);
+      if (infoInlineMatch) {
+        const queryCandidate = infoInlineMatch[1].trim();
+        if (queryCandidate.length > 0 && !/^(da disciplina|disciplina)$/i.test(queryCandidate)) {
+          sessionMode = 'info';
+          inlineTheme = question.replace(/^(?:quero\s+(?:saber\s+)?)?(?:informacoes|informacao|opcao 3|3)\s*(?:sobre|de|da|do|com|-|:)?\s*/i, '').trim();
+        }
+      }
+    }
 
-    // 5. Resumo aguardando tema
-    } else if (
-      lastAssistantMsg.includes('Qual tema da disciplina') ||
-      lastAssistantMsg.includes('você deseja estudar')
-    ) {
-      sessionMode = 'resumo';
-
-    // 6. Informações da disciplina
-    } else if (
-      lastAssistantMsg.includes('Deseja fazer outra pergunta, voltar ao menu') ||
-      lastAssistantMsg.includes('Informações da Disciplina INT 5224')
-    ) {
-      sessionMode = 'info';
+    // Se não foi atalho inline, analisa a mensagem anterior do assistente:
+    if (sessionMode === 'livre') {
+      if (
+        lastAssistantMsg.includes('farei três perguntas de múltipla escolha') ||
+        lastAssistantMsg.includes('Qual tema você deseja para o simulado')
+      ) {
+        sessionMode = 'simulado_tema';
+      } else if (
+        /tente novamente|tentar novamente/i.test(lastAssistantMsg) &&
+        /incorreto|errad|não está certa/i.test(lastAssistantMsg)
+      ) {
+        sessionMode = 'simulado_segunda_tentativa';
+      } else if (
+        /Questão\s*[123]:/i.test(lastAssistantMsg) &&
+        /\*?\*?A\)/.test(lastAssistantMsg) &&
+        /\*?\*?B\)/.test(lastAssistantMsg) &&
+        /\*?\*?C\)/.test(lastAssistantMsg) &&
+        /\*?\*?D\)/.test(lastAssistantMsg)
+      ) {
+        sessionMode = 'simulado_respondendo';
+      } else if (
+        /deseja aprofundar este tema|deseja aprofundar mais/i.test(lastAssistantMsg)
+      ) {
+        sessionMode = 'resumo_aprofundar';
+      } else if (
+        lastAssistantMsg.includes('Qual tema da disciplina') ||
+        lastAssistantMsg.includes('você deseja estudar')
+      ) {
+        sessionMode = 'resumo';
+      } else if (
+        lastAssistantMsg.includes('Deseja fazer outra pergunta, voltar ao menu') ||
+        lastAssistantMsg.includes('Informações da Disciplina INT 5224')
+      ) {
+        sessionMode = 'info';
+      }
     }
 
     // Threshold dinâmico: busca de informações do curso usa threshold menor
@@ -847,7 +836,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const answer = await generateResponse(question, docs, history, sessionMode);
+    const answer = await generateResponse(question, docs, history, sessionMode, inlineTheme);
 
     // await para modos onde o próximo estado depende do histórico salvo
     const needsAwait = ['simulado_tema', 'simulado_respondendo', 'simulado_segunda_tentativa', 'resumo', 'resumo_aprofundar'].includes(sessionMode);
