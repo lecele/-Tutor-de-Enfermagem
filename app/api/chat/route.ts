@@ -698,25 +698,12 @@ export async function POST(req: NextRequest) {
     // ── Rota de conteúdo: RAG completo + Prompt Mestre ──────────────────────
 
     let history: Array<{ role: string; content: string }> = [];
-    let embedding!: number[];
+    let docs: Document[] = [];
 
     try {
-      [history, embedding] = await Promise.all([
-        getSessionHistory(session_id),
-        embedQuery(question),
-      ]);
+      history = await getSessionHistory(session_id);
     } catch (e) {
-      console.error('[init]', e);
-      try { embedding = await embedQuery(question); } catch {
-        saveMessages(session_id, question, FALLBACK_RESPONSE);
-        return NextResponse.json({
-          answer: FALLBACK_RESPONSE,
-          sources_found: 0,
-          has_context: false,
-          chat_history_length: 0,
-          processing_time_ms: Date.now() - startTime
-        });
-      }
+      console.warn('[history]', e);
     }
 
     // ── Detecção de contexto de sessão ────────────────────────────────────────
@@ -803,37 +790,27 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Threshold dinâmico: busca de informações do curso usa threshold menor
-    const isCourseQuery = sessionMode === 'info' ||
-      /prof|horar|atend|cron|calend|nota|avali|plano|trabalho|conteudo|carga|disciplin|ementa|frequenc|moodle|email|contato|media|prova/i.test(question);
-    const threshold = isCourseQuery ? 0.25 : 0.35;
+    // Busca RAG de forma resiliente
+    try {
+      const isCourseQuery = sessionMode === 'info' ||
+        /prof|horar|atend|cron|calend|nota|avali|plano|trabalho|conteudo|carga|disciplin|ementa|frequenc|moodle|email|contato|media|prova/i.test(question);
+      const threshold = isCourseQuery ? 0.25 : 0.35;
 
-    let docs = await retrieveDocs(embedding, threshold);
+      const embedding = await embedQuery(question);
+      docs = await retrieveDocs(embedding, threshold);
 
-    // Para consultas sobre a disciplina, injetar o plano de ensino local como fonte primária
-    if (isCourseQuery) {
-      docs = [
-        {
-          content: LOCAL_COURSE_INFO,
-          source: 'PLANO ENSINO INT5224 2026-2.pdf',
-          similarity: 0.99
-        } as any,
-        ...docs
-      ];
-    }
-
-    // Simulado e aprofundamento não dependem de RAG — não bloquear se docs vazio
-    const noRagNeeded = ['simulado_tema', 'simulado_respondendo', 'simulado_segunda_tentativa', 'resumo_aprofundar'].includes(sessionMode);
-
-    if (docs.length === 0 && !noRagNeeded) {
-      saveMessages(session_id, question, FALLBACK_RESPONSE);
-      return NextResponse.json({
-        answer: FALLBACK_RESPONSE,
-        sources_found: 0,
-        has_context: false,
-        chat_history_length: history.length + 2,
-        processing_time_ms: Date.now() - startTime,
-      });
+      if (isCourseQuery) {
+        docs = [
+          {
+            content: LOCAL_COURSE_INFO,
+            source: 'PLANO ENSINO INT5224 2026-2.pdf',
+            similarity: 0.99
+          } as any,
+          ...docs
+        ];
+      }
+    } catch (e) {
+      console.warn('[rag/embedding warning]', e);
     }
 
     const answer = await generateResponse(question, docs, history, sessionMode, inlineTheme);
