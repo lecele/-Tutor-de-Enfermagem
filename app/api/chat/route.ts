@@ -126,7 +126,7 @@ interface Document {
 
 // ── Roteamento por intenção (sem LLM) ────────────────────────────────────────
 
-type Intent = 'greeting' | 'menu_return' | 'farewell' | 'menu_resumo' | 'menu_simulado' | 'menu_info' | 'content';
+type Intent = 'greeting' | 'menu_return' | 'farewell' | 'menu_resumo' | 'menu_simulado' | 'menu_info' | 'aprofundar' | 'content';
 
 function detectIntent(text: string): Intent {
   const norm = text
@@ -159,6 +159,11 @@ function detectIntent(text: string): Intent {
   }
   if (/^(4|opcao 4|encerrar sessao|encerrar|sair|tchau|bye|adeus|finalizar)$/.test(norm)) {
     return 'farewell';
+  }
+
+  // Aprofundamento do tema atual (NÃO é retorno ao menu)
+  if (/^(aprofundar|aprofundar este tema|aprofundar mais|aprofundar o tema)$/.test(norm)) {
+    return 'aprofundar';
   }
 
   const words = norm.split(/\s+/).filter(Boolean);
@@ -657,6 +662,31 @@ export async function POST(req: NextRequest) {
         sources_found: 0,
         has_context: false,
         chat_history_length: 1,
+        processing_time_ms: Date.now() - startTime,
+      });
+    }
+
+    // ── Rota de aprofundamento: continua no mesmo tema sem voltar ao menu ────
+    if (intent === 'aprofundar') {
+      // Carrega histórico para extrair o tema e gerar aprofundamento
+      let historyForAprofundar: Array<{ role: string; content: string }> = [];
+      let embeddingForAprofundar!: number[];
+      try {
+        [historyForAprofundar, embeddingForAprofundar] = await Promise.all([
+          getSessionHistory(session_id),
+          embedQuery(question),
+        ]);
+      } catch {
+        embeddingForAprofundar = await embedQuery(question);
+      }
+      const docsAprofundar = await retrieveDocs(embeddingForAprofundar, 0.35);
+      const answerAprofundar = await generateResponse(question, docsAprofundar, historyForAprofundar, 'resumo_aprofundar');
+      await saveMessages(session_id, question, answerAprofundar);
+      return NextResponse.json({
+        answer: answerAprofundar,
+        sources_found: docsAprofundar.length,
+        has_context: docsAprofundar.length > 0,
+        chat_history_length: historyForAprofundar.length + 2,
         processing_time_ms: Date.now() - startTime,
       });
     }
