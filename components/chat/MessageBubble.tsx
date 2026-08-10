@@ -107,7 +107,7 @@ function UserBubble({ content }: { content: string }) {
 
 // Labels exatos que devem ser renderizados como botões interativos (menu principal)
 // Qualquer outro item de lista (conteúdo, referências, exemplos) renderiza como <li> normal
-const MENU_BUTTON_RE = /^(resumo de conteúdo|resumo|simulado de prova|simulado|informações da disciplina|informações|encerrar sessão|encerrar|aprofundar|aprofundar este tema|aprofundar mais|escolher outro tema|outro tema|voltar ao menu principal|voltar ao menu|menu principal|continuar o simulado|continuar simulado|fazer outra pergunta|outra pergunta|repetir a pergunta)$/i;
+const MENU_BUTTON_RE = /^(resumo de conteúdo|resumo|quiz da disciplina|quiz|simulado de prova|simulado|informações da disciplina|informações|encerrar sessão|encerrar|aprofundar|aprofundar este tema|aprofundar mais|escolher outro tema|outro tema|voltar ao menu principal|voltar ao menu|menu principal|continuar o simulado|continuar simulado|continuar o quiz|continuar quiz|fazer outra pergunta|outra pergunta|repetir a pergunta)$/i;
 
 function AgentBubble({ content, sourcesFound, hasContext }: {
   content: string;
@@ -118,7 +118,7 @@ function AgentBubble({ content, sourcesFound, hasContext }: {
   const isOptionMessage = useMemo(() => {
     const lower = content.toLowerCase();
     return (
-      (lower.includes('resumo de conteúdo') && lower.includes('simulado de prova')) ||
+      (lower.includes('resumo de conteúdo') && (lower.includes('simulado de prova') || lower.includes('quiz da disciplina'))) ||
       lower.includes('perguntar sobre:') ||
       lower.includes('pergunte sobre:') ||
       lower.includes('escolha uma das') ||

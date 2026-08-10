@@ -174,7 +174,7 @@ function WelcomeMenu({ onSelect }: { onSelect: (text: string) => void }) {
       description: 'Revise os temas da disciplina com explicações e exemplos clínicos',
     },
     {
-      label: 'Simulado de Prova',
+      label: 'Quiz da Disciplina',
       icon: 'quiz',
       description: 'Pratique com questões de múltipla escolha e feedback imediato',
     },
@@ -192,20 +192,25 @@ function WelcomeMenu({ onSelect }: { onSelect: (text: string) => void }) {
 
   return (
     <div className="flex flex-col items-center justify-start text-center px-1 mt-2 relative z-10 w-full gap-3 md:gap-4">
-      {/* Ícone e título */}
-      <div className="flex flex-col items-center gap-1.5">
-        <span className="material-symbols-outlined text-[36px] md:text-[48px] text-[#1573C2] dark:text-blue-300 drop-shadow-md" style={{ fontVariationSettings: "'FILL' 1" }}>
-          medical_information
-        </span>
-        <h2 className="text-sm md:text-lg font-bold text-[#1573C2] dark:text-white leading-tight max-w-lg">
-          Bem-vindo(a) ao Assistente de Estudos da INT 5224
-        </h2>
-        <p className="text-[11px] md:text-sm text-gray-500 dark:text-blue-200/70 max-w-md">
-          O cuidado no processo de viver humano II – a condição cirúrgica · UFSC
+      {/* Ícone e texto da Seção 7.1 do Prompt 10Aug2026 */}
+      <div className="flex flex-col items-center gap-2 max-w-xl text-left bg-white/60 dark:bg-blue-950/40 p-4 md:p-5 rounded-2xl border border-blue-200/60 dark:border-blue-800/40 shadow-sm backdrop-blur-sm">
+        <div className="flex items-center gap-2.5 w-full border-b border-blue-100 dark:border-blue-900/60 pb-2.5 mb-1">
+          <span className="material-symbols-outlined text-[28px] md:text-[32px] text-[#1573C2] dark:text-blue-400 shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>
+            medical_information
+          </span>
+          <h2 className="text-xs md:text-sm font-bold text-[#1573C2] dark:text-blue-200 leading-snug">
+            Assistente de Estudos da INT 5224 – O cuidado no processo de viver humano II: a condição cirúrgica
+          </h2>
+        </div>
+        
+        <p className="text-[12px] md:text-xs text-gray-700 dark:text-blue-100/90 leading-relaxed">
+          Este espaço foi pensado para facilitar sua jornada de aprendizagem sobre o cuidado no processo de viver humano em condição cirúrgica. Aqui você revisa conteúdos, pratica com simulados e acessa informações essenciais da disciplina.
         </p>
-        <p className="text-[11px] md:text-xs text-gray-400 dark:text-blue-200/50 max-w-sm">
-          Escolha uma opção abaixo ou envie uma pergunta diretamente no chat.
-        </p>
+
+        <div className="w-full text-[11px] md:text-xs text-gray-600 dark:text-blue-200/80 space-y-1 pt-1 border-t border-gray-100 dark:border-blue-900/40">
+          <p><strong>Como usar:</strong> Fale comigo como se estivesse conversando com um tutor. Peça explicações, tire dúvidas ou escolha uma das opções abaixo.</p>
+          <p><strong>O que esperar:</strong> Clareza, objetividade e apoio contínuo — sempre dentro dos limites da disciplina.</p>
+        </div>
       </div>
 
       {/* Botões do menu */}
