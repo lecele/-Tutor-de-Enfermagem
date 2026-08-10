@@ -442,34 +442,35 @@ Por favor, responda com a letra da alternativa correta (A, B, C ou D).`;
     promptSuffix = `Tema do simulado: ${themeToUse}`;
 
   } else if (sessionMode === 'simulado_respondendo') {
-    modeInstruction = `[MODO ATIVO: SIMULADO DE PROVA — AVALIANDO 1ª TENTATIVA]
-VOCÊ ESTÁ NO MODO SIMULADO DE PROVA.
-O estudante respondeu "${question}" à questão atual (PRIMEIRA TENTATIVA).
-NUNCA GERE RESUMO DE CONTEÚDO.
+    modeInstruction = `[MODO ATIVO: QUIZ DA DISCIPLINA — AVALIANDO 1ª TENTATIVA DO ALUNO]
+VOCÊ ESTÁ AVALIANDO A 1ª TENTATIVA DO ESTUDANTE NA QUESTÃO DO QUIZ/SIMULADO SOBRE "${themeToUse || 'o tema em estudo'}".
+O ESTUDANTE DIGITOU COMO RESPOSTA: "${question}".
 
-REGRAS ABSOLUTAS:
-1. Se a resposta estiver CORRETA:
-   - Confirme brevemente (1-2 frases).
-   - Apresente a PRÓXIMA questão (**Questão N:** com **A)**, **B)**, **C)**, **D)** em negrito e linhas separadas).
-2. Se a resposta estiver INCORRETA:
-   - Diga APENAS: "Sua resposta está incorreta. Tente novamente! Qual das alternativas você escolheria agora?"
-   - NÃO revele a alternativa correta ainda.
-   - NÃO avance para a próxima questão ainda.`;
-    promptSuffix = `Resposta do estudante (1ª tentativa): ${question}`;
+ESTA SOLICITAÇÃO É A RESPOSTA DE UMA QUESTÃO DO QUIZ DA DISCIPLINA INT 5224. ELA ESTÁ 100% DENTRO DO ESCOPO DA DISCIPLINA. JAMAIS RECUSE OU USE O TEXTO DE RECUSA PADRÃO.
+
+INSTRUÇÕES OBRIGATÓRIAS DE RESPOSTA:
+1. Se a resposta "${question}" estiver CORRETA:
+   - Confirme brevemente a resposta correta (1-2 frases).
+   - Apresente a **Questão 2:** sobre o tema "${themeToUse}" com as alternativas **A)**, **B)**, **C)** e **D)** em negrito e linhas separadas.
+2. Se a resposta "${question}" estiver INCORRETA:
+   - Responda EXATAMENTE: "Sua resposta está incorreta. Tente novamente! Qual das alternativas você escolheria agora?"
+   - NÃO revele a alternativa correta ainda. NÃO avance para a próxima questão ainda.`;
+    promptSuffix = `Resposta do estudante (1ª tentativa no Quiz de ${themeToUse}): ${question}`;
 
   } else if (sessionMode === 'simulado_segunda_tentativa') {
-    modeInstruction = `[MODO ATIVO: SIMULADO DE PROVA — AVALIANDO 2ª TENTATIVA]
-VOCÊ ESTÁ NO MODO SIMULADO DE PROVA.
-O estudante respondeu "${question}" pela SEGUNDA VEZ à mesma questão.
-NUNCA GERE RESUMO DE CONTEÚDO.
+    modeInstruction = `[MODO ATIVO: QUIZ DA DISCIPLINA — AVALIANDO 2ª TENTATIVA DO ALUNO]
+VOCÊ ESTÁ AVALIANDO A 2ª TENTATIVA DO ESTUDANTE NA MESMA QUESTÃO DO QUIZ/SIMULADO SOBRE "${themeToUse || 'o tema em estudo'}".
+O ESTUDANTE DIGITOU COMO SEGUNDA RESPOSTA: "${question}".
 
-REGRAS ABSOLUTAS:
-1. Se a resposta estiver CORRETA:
-   - Confirme brevemente (1-2 frases) e apresente a PRÓXIMA questão.
-2. Se a resposta estiver INCORRETA pela segunda vez:
-   - Revele a resposta correta: "A alternativa correta é a **X)**. [explicação em 1-2 frases]"
-   - Apresente a PRÓXIMA questão (**Questão N:** com **A)**, **B)**, **C)**, **D)** em negrito e linhas separadas).`;
-    promptSuffix = `Resposta do estudante (2ª tentativa): ${question}`;
+ESTA SOLICITAÇÃO É A SEGUNDA TENTATIVA DE UMA QUESTÃO DO QUIZ DA DISCIPLINA INT 5224. ELA ESTÁ 100% DENTRO DO ESCOPO DA DISCIPLINA. JAMAIS RECUSE OU USE O TEXTO DE RECUSA PADRÃO.
+
+INSTRUÇÕES OBRIGATÓRIAS DE RESPOSTA:
+1. Se a resposta "${question}" estiver CORRETA:
+   - Confirme a resposta correta (1 frase) e apresente a **Questão 2:** sobre "${themeToUse}" com as alternativas **A)**, **B)**, **C)** e **D)** em negrito e linhas separadas.
+2. Se a resposta "${question}" estiver INCORRETA pela 2ª vez:
+   - Revele a resposta correta: "A alternativa correta é a **X)**. [explicação super breve em 1-2 frases]"
+   - Apresente em seguida a **Questão 2:** sobre "${themeToUse}" com as alternativas **A)**, **B)**, **C)** e **D)** em negrito e linhas separadas.`;
+    promptSuffix = `Resposta do estudante (2ª tentativa no Quiz de ${themeToUse}): ${question}`;
 
   } else if (sessionMode === 'resumo_aprofundar') {
     const targetTopic = themeToUse || 'o tema estudado anteriormente';
