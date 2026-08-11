@@ -2,7 +2,7 @@
 
 // components/chat/MessageBubble.tsx — Balões com suporte a opções de menu clicáveis
 
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useEffect, useRef, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
