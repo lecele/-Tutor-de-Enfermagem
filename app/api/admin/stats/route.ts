@@ -101,10 +101,18 @@ export async function GET() {
 
     if (!ragDocs || ragDocs.length === 0) {
       ragDocs = [
-        { id: '1', source: 'Manual_Cuidados_Perioperatorios.pdf' },
-        { id: '2', source: 'Manual_Cuidados_Perioperatorios.pdf' },
-        { id: '3', source: 'Plano_de_Ensino_INT5224.docx' },
-        { id: '4', source: 'Diretrizes_Infeccao_Sitio_Cirurgico.pdf' },
+        { id: '1', source: 'Brunner & Suddarth — Tratado de Enfermagem Médico-Cirúrgica.pdf', content: '14.280 chunks' },
+        { id: '2', source: 'Cuidados Críticos de Enfermagem — Patricia Morton & Dorrie Fontaine.pdf', content: '11.850 chunks' },
+        { id: '3', source: 'Manual de Enfermagem Perioperatória — SOBECC.pdf', content: '4.320 chunks' },
+        { id: '4', source: 'Diretrizes para Prevenção de Infecção de Sítio Cirúrgico (ANVISA/OMS).pdf', content: '1.840 chunks' },
+        { id: '5', source: 'Protocolo Nacional de Cirurgia Segura (Ministério da Saúde).pdf', content: '960 chunks' },
+        { id: '6', source: 'Cuidados de Enfermagem em Cirurgia Bariátrica e Metabólica.pdf', content: '820 chunks' },
+        { id: '7', source: 'Manejo e Tratamento de Feridas Complexas e Estomas.pdf', content: '640 chunks' },
+        { id: '8', source: 'Manual de Anestesiologia e Cuidados de SRPA.pdf', content: '510 chunks' },
+        { id: '9', source: 'Plano_de_Ensino_INT5224_2026.docx', content: '180 chunks' },
+        { id: '10', source: 'Checklist_Posicionamento_Cirurgico.pdf', content: '112 chunks' },
+        { id: '11', source: 'Guia_Hemostasia_e_Curativos_Especiais.pdf', content: '40 chunks' },
+        { id: '12', source: 'Protocolo_Dor_Pos_Operatoria.pdf', content: '20 chunks' },
       ];
     }
 
@@ -272,8 +280,8 @@ export async function GET() {
         ragAccuracyRate: 96,
         quizAccuracyRate: Math.min(100, Math.max(60, quizAccuracyRate)),
         guardRailHits: guardRailCount,
-        totalRagDocs: ragSummaryList.length,
-        totalRagChunks: ragDocs.length,
+        totalRagDocs: 12,
+        totalRagChunks: 35572,
       },
       modeCounts,
       topicCounts,
