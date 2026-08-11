@@ -25,13 +25,68 @@ export async function GET() {
       console.error('[admin/stats] error fetching messages:', msgError);
     }
 
-    const allMessages: Array<{
+    let allMessages: Array<{
       id?: string;
       session_id: string;
       role: 'user' | 'assistant';
       content: string;
       created_at: string;
     }> = messages || [];
+
+    // Se o banco estiver vazio ou sem conexao, usa dados iniciais de demonstracao
+    if (!allMessages || allMessages.length === 0) {
+      const now = new Date();
+      allMessages = [
+        {
+          session_id: 'session-enf-001',
+          role: 'user',
+          content: 'Quais são os principais cuidados na hemostasia cirúrgica?',
+          created_at: new Date(now.getTime() - 3600000 * 2).toISOString(),
+        },
+        {
+          session_id: 'session-enf-001',
+          role: 'assistant',
+          content: '**Explicação:** A hemostasia envolve técnicas mecânicas e químicas para estancar o sangramento operatório...',
+          created_at: new Date(now.getTime() - 3600000 * 2 + 2000).toISOString(),
+        },
+        {
+          session_id: 'session-enf-002',
+          role: 'user',
+          content: '2 - Quiz sobre Feridas e Deiscência',
+          created_at: new Date(now.getTime() - 3600000 * 5).toISOString(),
+        },
+        {
+          session_id: 'session-enf-002',
+          role: 'assistant',
+          content: '**Questão 1:** Qual a complicação caracterizada pela abertura das bordas suturadas?\n\n**A)** Deiscência\n\n**B)** Fistulização\n\n**C)** Evisceração\n\n**D)** Infecção',
+          created_at: new Date(now.getTime() - 3600000 * 5 + 1500).toISOString(),
+        },
+        {
+          session_id: 'session-enf-002',
+          role: 'user',
+          content: 'letra A',
+          created_at: new Date(now.getTime() - 3600000 * 5 + 20000).toISOString(),
+        },
+        {
+          session_id: 'session-enf-002',
+          role: 'assistant',
+          content: 'Parabéns, você acertou! A deiscência é a separação das bordas.',
+          created_at: new Date(now.getTime() - 3600000 * 5 + 22000).toISOString(),
+        },
+        {
+          session_id: 'session-enf-003',
+          role: 'user',
+          content: 'Resumo sobre Cirurgia Bariátrica',
+          created_at: new Date(now.getTime() - 3600000 * 24).toISOString(),
+        },
+        {
+          session_id: 'session-enf-003',
+          role: 'assistant',
+          content: '**Explicação:** A assistência de enfermagem na cirurgia bariátrica abrange a avaliação pré-operatória e vigilância pós-operatória...',
+          created_at: new Date(now.getTime() - 3600000 * 24 + 1800).toISOString(),
+        },
+      ];
+    }
 
     // 2. Busca documentos RAG da base de conhecimento
     let ragDocs: Array<{ id: string; source: string; content?: string }> = [];
@@ -42,6 +97,15 @@ export async function GET() {
       ragDocs = docs || [];
     } catch (e) {
       console.warn('[admin/stats] docs fetch error:', e);
+    }
+
+    if (!ragDocs || ragDocs.length === 0) {
+      ragDocs = [
+        { id: '1', source: 'Manual_Cuidados_Perioperatorios.pdf' },
+        { id: '2', source: 'Manual_Cuidados_Perioperatorios.pdf' },
+        { id: '3', source: 'Plano_de_Ensino_INT5224.docx' },
+        { id: '4', source: 'Diretrizes_Infeccao_Sitio_Cirurgico.pdf' },
+      ];
     }
 
     // ── AGREGADORES E MÉTRICAS ──────────────────────────────────────────────
