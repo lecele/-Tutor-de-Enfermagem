@@ -51,7 +51,7 @@ export function MessageBubble({ message, index }: MessageBubbleProps) {
         <span className={`mb-1 text-[10px] font-semibold uppercase tracking-wider ${
           isUser ? 'text-[#1573C2] dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'
         }`}>
-          {isUser ? 'Você' : 'Tutor IA'}
+          {isUser ? 'Você' : 'Tutor'}
         </span>
 
         {isUser ? <UserBubble content={message.content} /> : (
