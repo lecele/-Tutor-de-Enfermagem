@@ -660,15 +660,15 @@ export default function AdminDashboardPage() {
   return (
     <div className="flex h-screen w-full bg-[#040e1f] text-slate-100 font-sans overflow-hidden">
       {/* ── SIDEBAR ───────────────────────────────────────────────────────────── */}
-      <aside className="w-64 shrink-0 bg-[#020b18] border-r border-blue-900/40 flex flex-col p-4 gap-6 select-none z-20">
-        {/* Logo Branding (Expandida) */}
-        <div className="flex items-center gap-3.5 pb-4 border-b border-blue-900/40 pt-1">
-          <div className="w-16 h-16 shrink-0 flex items-center justify-center">
-            <img src="/logo.png" alt="Logo Tutor de Enfermagem" className="w-full h-full object-contain tutor-logo-premium drop-shadow-xl" />
+      <aside className="w-72 shrink-0 bg-[#020b18] border-r border-blue-900/40 flex flex-col p-4 gap-6 select-none z-20">
+        {/* Logo Branding (Significativamente Ampliada) */}
+        <div className="flex items-center gap-4 pb-4 border-b border-blue-900/40 pt-1">
+          <div className="w-20 h-20 shrink-0 flex items-center justify-center">
+            <img src="/logo.png" alt="Logo Tutor de Enfermagem" className="w-full h-full object-contain tutor-logo-premium drop-shadow-2xl scale-105" />
           </div>
           <div className="flex flex-col">
-            <strong className="text-base font-extrabold text-white tracking-wide leading-tight">InterAtiva Analytics</strong>
-            <span className="text-[10px] font-bold tracking-wider text-blue-400 uppercase">Tutor INT 5224</span>
+            <strong className="text-lg font-black text-white tracking-wide leading-tight">InterAtiva Analytics</strong>
+            <span className="text-[11px] font-bold tracking-wider text-blue-400 uppercase">Tutor INT 5224</span>
           </div>
         </div>
 
