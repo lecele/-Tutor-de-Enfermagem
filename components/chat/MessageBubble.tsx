@@ -33,9 +33,20 @@ function extractText(node: ReactNode): string {
 
 export function MessageBubble({ message, index }: MessageBubbleProps) {
   const isUser = message.role === 'user';
+  const bubbleRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Se for resposta do tutor, rola a tela para o INÍCIO da mensagem
+    if (!isUser && bubbleRef.current) {
+      setTimeout(() => {
+        bubbleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
+  }, [isUser]);
 
   return (
     <motion.div
+      ref={bubbleRef}
       className={`flex items-end gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}

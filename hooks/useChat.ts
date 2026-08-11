@@ -34,8 +34,10 @@ export function useChat() {
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isLoading, scrollToBottom]);
+    if (isLoading) {
+      scrollToBottom();
+    }
+  }, [isLoading, scrollToBottom]);
 
   // Verifica saúde do backend na montagem
   useEffect(() => {
