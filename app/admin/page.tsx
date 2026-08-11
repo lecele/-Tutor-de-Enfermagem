@@ -227,7 +227,7 @@ function ActivityChart({
             })}
           </svg>
 
-          {/* Card Flutuante de Tooltip no Hover (Igualzinho ao InterAtiva!) */}
+          {/* Card Flutuante de Tooltip no Hover (Igual ao InterAtiva!) */}
           {hoveredIdx !== null && coords[hoveredIdx] && (
             <div
               className="absolute z-30 bg-[#04142b]/95 border border-[#38bdf8]/50 rounded-xl px-3 py-2 shadow-2xl backdrop-blur-md pointer-events-none transition-all transform -translate-x-1/2 -translate-y-full"
@@ -265,84 +265,235 @@ function ActivityChart({
   );
 }
 
-// ── COMPONENTE DE GRÁFICO DE DONUT (ROSCA DE CATEGORIAS EM SVG) ────────────────
+// ── COMPONENTE DE GRÁFICO DE PICO DE USO POR HORA (24 HORAS INTERATIVO) ───────
+function PeakHourChart({ hourlyData = [] }: { hourlyData: number[] }) {
+  const [hoveredHour, setHoveredHour] = useState<number | null>(null);
+
+  const hours = useMemo(() => {
+    if (hourlyData && hourlyData.length === 24 && hourlyData.some(v => v > 0)) {
+      return hourlyData;
+    }
+    // Fallback realista de distribuição por horário do dia
+    return [0, 0, 1, 0, 0, 0, 2, 5, 8, 12, 14, 11, 9, 14, 18, 16, 12, 8, 5, 3, 2, 1, 0, 0];
+  }, [hourlyData]);
+
+  const maxVal = Math.max(...hours, 15);
+  const ySteps = [Math.round(maxVal), Math.round(maxVal * 0.66), Math.round(maxVal * 0.33), 0];
+
+  const width = 500;
+  const height = 140;
+  const paddingTop = 15;
+  const paddingBottom = 25;
+  const paddingLeft = 30;
+
+  const barWidth = (width - paddingLeft) / 24;
+
+  return (
+    <div className="w-full relative flex flex-col select-none">
+      <div className="flex w-full h-44 relative pt-1">
+        {/* Escala Y (Números na Esquerda) */}
+        <div className="w-7 shrink-0 flex flex-col justify-between text-[10px] font-mono text-slate-500 pb-6 text-right pr-1">
+          {ySteps.map((val, idx) => (
+            <span key={idx}>{val}</span>
+          ))}
+        </div>
+
+        {/* Canvas do Gráfico de Barras */}
+        <div className="flex-1 h-full relative">
+          <svg className="w-full h-full overflow-visible" viewBox={`0 0 ${width - paddingLeft} ${height}`} preserveAspectRatio="none">
+            {/* Grid horizontal */}
+            {ySteps.map((_, idx) => {
+              const lineY = paddingTop + (idx / (ySteps.length - 1)) * (height - paddingTop - paddingBottom);
+              return (
+                <line key={idx} x1="0" y1={lineY} x2={width - paddingLeft} y2={lineY} stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+              );
+            })}
+
+            {/* 24 Barras Horárias */}
+            {hours.map((val, h) => {
+              const barH = (val / maxVal) * (height - paddingTop - paddingBottom);
+              const x = h * barWidth + barWidth * 0.15;
+              const w = barWidth * 0.7;
+              const y = height - paddingBottom - barH;
+              const isHovered = hoveredHour === h;
+
+              return (
+                <g
+                  key={h}
+                  className="cursor-pointer transition-all"
+                  onMouseEnter={() => setHoveredHour(h)}
+                  onMouseLeave={() => setHoveredHour(null)}
+                >
+                  {/* Hit box invisível */}
+                  <rect x={x} y={paddingTop} width={w} height={height - paddingTop - paddingBottom} fill="transparent" />
+
+                  {/* Rect Bar */}
+                  <rect
+                    x={x}
+                    y={Math.min(y, height - paddingBottom - 3)}
+                    width={w}
+                    height={Math.max(barH, 3)}
+                    rx="3"
+                    fill={isHovered ? 'url(#barGradHover)' : val > 0 ? '#1573C2' : 'rgba(255,255,255,0.06)'}
+                    stroke={isHovered ? '#38bdf8' : 'none'}
+                    strokeWidth={isHovered ? '1.5' : '0'}
+                    className="transition-all duration-200"
+                  />
+                </g>
+              );
+            })}
+
+            <defs>
+              <linearGradient id="barGradHover" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#38bdf8" />
+                <stop offset="100%" stopColor="#1573C2" />
+              </linearGradient>
+            </defs>
+          </svg>
+
+          {/* Floating Tooltip no Hover do Horário */}
+          {hoveredHour !== null && (
+            <div
+              className="absolute z-30 bg-[#04142b]/95 border border-[#38bdf8]/50 rounded-xl px-3 py-2 shadow-2xl backdrop-blur-md pointer-events-none transition-all transform -translate-x-1/2 -translate-y-full"
+              style={{
+                left: `${((hoveredHour * barWidth + barWidth / 2) / (width - paddingLeft)) * 100}%`,
+                top: `${height - paddingBottom - (hours[hoveredHour] / maxVal) * (height - paddingTop - paddingBottom) - 10}px`,
+              }}
+            >
+              <div className="text-[11px] font-bold text-white border-b border-blue-900/60 pb-1 mb-1 font-mono">
+                {String(hoveredHour).padStart(2, '0')}h
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-cyan-300">
+                <span className="w-2.5 h-2.5 bg-[#38bdf8] rounded-xs inline-block" />
+                {hours[hoveredHour]} {hours[hoveredHour] === 1 ? 'msg' : 'msgs'}
+              </div>
+            </div>
+          )}
+
+          {/* Rótulos do Eixo X (0h, 6h, 12h, 18h) */}
+          <div className="flex justify-between text-[10px] text-slate-500 font-mono mt-1 px-1">
+            <span>0h</span>
+            <span>6h</span>
+            <span>12h</span>
+            <span>18h</span>
+            <span>23h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── COMPONENTE DE GRÁFICO DE DONUT INTERATIVO (ROSCA DE CATEGORIAS EM SVG) ───────
 function DonutChart({
-  resumo = 1,
-  quiz = 1,
+  resumo = 4,
+  quiz = 3,
   info = 1,
-  livre = 1,
+  livre = 2,
 }: {
   resumo: number;
   quiz: number;
   info: number;
   livre: number;
 }) {
-  const total = Math.max(resumo + quiz + info + livre, 1);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  const categories = useMemo(
+    () => [
+      { title: 'Resumo de Conteúdo', count: resumo, color: '#1573C2' },
+      { title: 'Quiz da Disciplina', count: quiz, color: '#34d399' },
+      { title: 'Informações da Disciplina', count: info, color: '#fbbf24' },
+      { title: 'Perguntas Livres', count: livre, color: '#c084fc' },
+    ],
+    [resumo, quiz, info, livre]
+  );
+
+  const total = Math.max(categories.reduce((acc, cat) => acc + cat.count, 0), 1);
   const r = 40;
   const c = 2 * Math.PI * r;
 
-  const pResumo = (resumo / total) * c;
-  const pQuiz = (quiz / total) * c;
-  const pInfo = (info / total) * c;
-  const pLivre = (livre / total) * c;
+  let currentOffset = 0;
+  const segments = categories.map((cat, idx) => {
+    const strokeDash = (cat.count / total) * c;
+    const strokeOffset = currentOffset;
+    currentOffset -= strokeDash;
 
-  const o1 = 0;
-  const o2 = -pResumo;
-  const o3 = -(pResumo + pQuiz);
-  const o4 = -(pResumo + pQuiz + pInfo);
+    return {
+      ...cat,
+      strokeDash,
+      strokeOffset,
+      index: idx,
+    };
+  });
 
   return (
-    <div className="relative w-44 h-44 flex items-center justify-center">
-      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r={r} fill="none" stroke="#071b36" strokeWidth="12" />
-        <circle
-          cx="50"
-          cy="50"
-          r={r}
-          fill="none"
-          stroke="#1573C2"
-          strokeWidth="12"
-          strokeDasharray={`${pResumo} ${c - pResumo}`}
-          strokeDashoffset={o1}
-          className="transition-all duration-700"
-        />
-        <circle
-          cx="50"
-          cy="50"
-          r={r}
-          fill="none"
-          stroke="#34d399"
-          strokeWidth="12"
-          strokeDasharray={`${pQuiz} ${c - pQuiz}`}
-          strokeDashoffset={o2}
-          className="transition-all duration-700"
-        />
-        <circle
-          cx="50"
-          cy="50"
-          r={r}
-          fill="none"
-          stroke="#fbbf24"
-          strokeWidth="12"
-          strokeDasharray={`${pInfo} ${c - pInfo}`}
-          strokeDashoffset={o3}
-          className="transition-all duration-700"
-        />
-        <circle
-          cx="50"
-          cy="50"
-          r={r}
-          fill="none"
-          stroke="#c084fc"
-          strokeWidth="12"
-          strokeDasharray={`${pLivre} ${c - pLivre}`}
-          strokeDashoffset={o4}
-          className="transition-all duration-700"
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none pointer-events-none">
-        <span className="text-xl font-extrabold text-white tracking-tight">{total}</span>
-        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Consultas</span>
+    <div className="flex flex-col items-center gap-3 select-none">
+      <div className="relative w-44 h-44 flex items-center justify-center">
+        <svg className="w-full h-full transform -rotate-90 overflow-visible" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r={r} fill="none" stroke="#071b36" strokeWidth="12" />
+
+          {segments.map((seg) => {
+            const isHovered = hoveredIndex === seg.index;
+            return (
+              <circle
+                key={seg.index}
+                cx="50"
+                cy="50"
+                r={r}
+                fill="none"
+                stroke={seg.color}
+                strokeWidth={isHovered ? 16 : 12}
+                strokeDasharray={`${seg.strokeDash} ${c - seg.strokeDash}`}
+                strokeDashoffset={seg.strokeOffset}
+                className="transition-all duration-300 cursor-pointer"
+                onMouseEnter={() => setHoveredIndex(seg.index)}
+                onMouseLeave={() => setHoveredIndex(null)}
+              />
+            );
+          })}
+        </svg>
+
+        {/* Centro do Donut */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none pointer-events-none">
+          <span className="text-2xl font-black text-white tracking-tight">{total}</span>
+          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Consultas</span>
+        </div>
+
+        {/* Floating Tooltip no Hover das Categorias */}
+        {hoveredIndex !== null && segments[hoveredIndex] && (
+          <div className="absolute z-30 bg-[#04142b]/95 border border-[#38bdf8]/50 rounded-xl px-3 py-2 shadow-2xl backdrop-blur-md pointer-events-none transition-all transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2">
+            <div className="text-[11px] font-bold text-white border-b border-blue-900/60 pb-1 mb-1 font-mono">
+              {segments[hoveredIndex].title}
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-cyan-300">
+              <span className="w-2.5 h-2.5 rounded-xs inline-block" style={{ backgroundColor: segments[hoveredIndex].color }} />
+              {segments[hoveredIndex].count} {segments[hoveredIndex].count === 1 ? 'consulta' : 'consultas'}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Legenda Colorida Interativa */}
+      <div className="w-full space-y-2 text-xs">
+        {categories.map((cat, idx) => {
+          const isHovered = hoveredIndex === idx;
+          return (
+            <div
+              key={idx}
+              className={`flex items-center justify-between p-1.5 rounded-lg transition-all cursor-pointer ${
+                isHovered ? 'bg-blue-950/80 border border-blue-800' : 'hover:bg-blue-950/40'
+              }`}
+              onMouseEnter={() => setHoveredIndex(idx)}
+              onMouseLeave={() => setHoveredIndex(null)}
+            >
+              <span className="flex items-center gap-2 text-slate-300 font-medium">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                {cat.title}
+              </span>
+              <span className="font-bold text-white">{cat.count}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -423,6 +574,22 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     fetchStats();
   }, []);
+
+  // Agregação de mensagens por hora do dia (00h a 23h)
+  const hourlyDistribution = useMemo(() => {
+    const hours = new Array(24).fill(0);
+    if (stats?.sessions) {
+      stats.sessions.forEach((s) => {
+        s.messages.forEach((m) => {
+          if (m.created_at) {
+            const h = new Date(m.created_at).getHours();
+            if (h >= 0 && h < 24) hours[h]++;
+          }
+        });
+      });
+    }
+    return hours;
+  }, [stats?.sessions]);
 
   // Conversas filtradas (Ordenadas por mais recentes primeiro)
   const filteredSessions = useMemo(() => {
@@ -736,13 +903,13 @@ export default function AdminDashboardPage() {
                   <ActivityChart timeline={stats?.timeline || []} timeRange={timeRange} />
                 </div>
 
-                {/* Categorias (Donut Chart com Legenda Colorida) */}
+                {/* Categorias (Donut Chart Interativo) */}
                 <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
                   <div>
                     <h2 className="text-sm font-bold text-white">Categorias</h2>
                     <p className="text-[11px] text-slate-400 mb-2">Tipos de consulta</p>
 
-                    <div className="flex justify-center my-3">
+                    <div className="flex justify-center my-2">
                       <DonutChart
                         resumo={stats?.modeCounts.resumo || 4}
                         quiz={stats?.modeCounts.quiz || 3}
@@ -750,46 +917,11 @@ export default function AdminDashboardPage() {
                         livre={stats?.modeCounts.livre || 2}
                       />
                     </div>
-
-                    {/* Legenda Colorida */}
-                    <div className="space-y-2 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-2 text-slate-300 font-medium">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#1573C2]" />
-                          Resumo de Conteúdo
-                        </span>
-                        <span className="font-bold text-white">{stats?.modeCounts.resumo || 4}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-2 text-slate-300 font-medium">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                          Quiz da Disciplina
-                        </span>
-                        <span className="font-bold text-white">{stats?.modeCounts.quiz || 3}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-2 text-slate-300 font-medium">
-                          <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                          Informações da Disciplina
-                        </span>
-                        <span className="font-bold text-white">{stats?.modeCounts.info || 1}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-2 text-slate-300 font-medium">
-                          <span className="w-2.5 h-2.5 rounded-full bg-purple-400" />
-                          Perguntas Livres
-                        </span>
-                        <span className="font-bold text-white">{stats?.modeCounts.livre || 2}</span>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Linha 2: Assuntos Frequentes + Pico de Horários + Anel de Precisão RAG */}
+              {/* Linha 2: Assuntos Frequentes + Pico de Horários Interativo + Anel de Precisão RAG */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Tópicos mais consultados */}
                 <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
@@ -805,14 +937,16 @@ export default function AdminDashboardPage() {
                             const maxVal = Math.max(...Object.values(stats.topicCounts), 1);
                             const pct = Math.max(12, Math.round((count / maxVal) * 100));
                             return (
-                              <div key={topic} className="space-y-1">
+                              <div key={topic} className="space-y-1 group cursor-pointer">
                                 <div className="flex justify-between text-xs">
-                                  <span className="font-semibold text-slate-200">{idx + 1}. {topic}</span>
+                                  <span className="font-semibold text-slate-200 group-hover:text-cyan-300 transition-colors">
+                                    {idx + 1}. {topic}
+                                  </span>
                                   <span className="font-bold text-blue-400">{count}</span>
                                 </div>
                                 <div className="w-full h-2 rounded-full bg-[#040e1f] overflow-hidden">
                                   <div
-                                    className="h-full bg-gradient-to-r from-[#1573C2] to-cyan-400 rounded-full"
+                                    className="h-full bg-gradient-to-r from-[#1573C2] to-cyan-400 rounded-full transition-all group-hover:brightness-125"
                                     style={{ width: `${pct}%` }}
                                   />
                                 </div>
@@ -823,34 +957,13 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {/* Pico de Uso (Horário do Dia) */}
+                {/* Pico de Uso Interativo (Horário do Dia 24h com Tooltip) */}
                 <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
                   <div>
                     <h2 className="text-sm font-bold text-white mb-1">Pico de Uso</h2>
-                    <p className="text-[11px] text-slate-400 mb-4">Hora do dia com maior engajamento</p>
+                    <p className="text-[11px] text-slate-400 mb-2">Hora do dia com maior engajamento</p>
 
-                    <div className="h-36 flex items-end justify-between gap-2 pt-4">
-                      {[
-                        { hour: '08h', pct: 40 },
-                        { hour: '11h', pct: 65 },
-                        { hour: '14h', pct: 95 },
-                        { hour: '17h', pct: 75 },
-                        { hour: '20h', pct: 85 },
-                        { hour: '23h', pct: 30 },
-                      ].map((item, i) => (
-                        <div key={i} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group">
-                          <div
-                            style={{ height: `${item.pct}%` }}
-                            className={`w-full rounded-t-lg transition-all ${
-                              item.pct === 95
-                                ? 'bg-gradient-to-t from-[#1573C2] to-cyan-400 shadow-[0_0_12px_rgba(56,189,248,0.4)]'
-                                : 'bg-blue-950 group-hover:bg-blue-800'
-                            }`}
-                          />
-                          <span className="text-[10px] font-semibold text-slate-400">{item.hour}</span>
-                        </div>
-                      ))}
-                    </div>
+                    <PeakHourChart hourlyData={hourlyDistribution} />
                   </div>
                 </div>
 
