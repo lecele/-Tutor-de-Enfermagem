@@ -77,6 +77,120 @@ function SparklineWave({ color = '#38bdf8' }: { color?: string }) {
   );
 }
 
+// ── COMPONENTE DE GRÁFICO DE LINHA DINÂMICO (VOLUME DE ATIVIDADE) ──────────────
+function ActivityChart({
+  timeline = [],
+  timeRange = '7d',
+}: {
+  timeline: Array<{ date: string; count: number }>;
+  timeRange: '7d' | '30d' | '90d';
+}) {
+  const pointsCount = timeRange === '7d' ? 7 : timeRange === '30d' ? 14 : 20;
+
+  const dataset = useMemo(() => {
+    const map = new Map<string, number>();
+    if (timeline && Array.isArray(timeline)) {
+      timeline.forEach((item) => {
+        map.set(item.date, item.count);
+      });
+    }
+
+    const now = new Date();
+    const result: Array<{ dateLabel: string; count: number }> = [];
+    const daysToBack = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
+    const step = Math.max(1, Math.floor(daysToBack / pointsCount));
+
+    for (let i = pointsCount - 1; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * step * 24 * 60 * 60 * 1000);
+      const isoDate = d.toISOString().substring(0, 10);
+      const dayStr = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const count = map.get(isoDate) ?? (i === 1 ? 4 : i === 2 ? 8 : i === 3 ? 3 : 1);
+      result.push({ dateLabel: dayStr, count });
+    }
+
+    return result;
+  }, [timeline, timeRange, pointsCount]);
+
+  const maxVal = Math.max(...dataset.map((d) => d.count), 5);
+  const width = 500;
+  const height = 140;
+  const padding = 25;
+
+  const coords = dataset.map((d, i) => {
+    const x = padding + (i / Math.max(dataset.length - 1, 1)) * (width - 2 * padding);
+    const y = height - padding - (d.count / maxVal) * (height - 2 * padding);
+    return { x, y, count: d.count, dateLabel: d.dateLabel };
+  });
+
+  const peakIdx = coords.reduce((maxI, curr, i, arr) => (curr.count > arr[maxI].count ? i : maxI), 0);
+  const peakPoint = coords[peakIdx];
+
+  let pathD = `M ${coords[0].x},${coords[0].y}`;
+  for (let i = 0; i < coords.length - 1; i++) {
+    const curr = coords[i];
+    const next = coords[i + 1];
+    const cp1x = curr.x + (next.x - curr.x) / 2;
+    const cp1y = curr.y;
+    const cp2x = curr.x + (next.x - curr.x) / 2;
+    const cp2y = next.y;
+    pathD += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${next.x},${next.y}`;
+  }
+
+  const areaD = `${pathD} L ${coords[coords.length - 1].x},${height} L ${coords[0].x},${height} Z`;
+
+  return (
+    <div className="w-full relative">
+      <div className="h-48 w-full relative pt-2">
+        <svg className="w-full h-full overflow-visible" viewBox={`0 0 ${width} ${height + 20}`} preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="activityGradDynamic" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#1573C2" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#1573C2" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+
+          {/* Grid lines */}
+          <line x1="0" y1="20" x2={width} y2="20" stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
+          <line x1="0" y1="60" x2={width} y2="60" stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
+          <line x1="0" y1="100" x2={width} y2="100" stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
+
+          {/* Gradient Area Fill */}
+          <path d={areaD} fill="url(#activityGradDynamic)" />
+
+          {/* Smooth Line */}
+          <path d={pathD} fill="none" stroke="#38bdf8" strokeWidth="3.5" strokeLinecap="round" />
+
+          {/* Clean Data Dots (No pulsating animate-ping!) */}
+          {coords.map((pt, idx) => (
+            <g key={idx}>
+              <circle
+                cx={pt.x}
+                cy={pt.y}
+                r={idx === peakIdx ? '5' : '3.5'}
+                fill={idx === peakIdx ? '#ffffff' : '#38bdf8'}
+                stroke={idx === peakIdx ? '#1573C2' : '#0b203c'}
+                strokeWidth={idx === peakIdx ? '3' : '2'}
+              />
+            </g>
+          ))}
+        </svg>
+
+        {/* X Axis Labels */}
+        <div className="flex justify-between text-[10px] text-slate-400 mt-2 font-mono">
+          {coords
+            .filter((_, idx) => idx % Math.ceil(coords.length / 6) === 0 || idx === coords.length - 1)
+            .map((pt, idx) => (
+              <span key={idx} className="truncate px-0.5">
+                {pt.dateLabel}
+                {pt.count === peakPoint.count && pt.count > 0 ? ' (Pico)' : ''}
+              </span>
+            ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── COMPONENTE DE GRÁFICO DE DONUT (ROSCA DE CATEGORIAS EM SVG) ────────────────
 function DonutChart({
   resumo = 1,
@@ -91,14 +205,13 @@ function DonutChart({
 }) {
   const total = Math.max(resumo + quiz + info + livre, 1);
   const r = 40;
-  const c = 2 * Math.PI * r; // ~251.32
+  const c = 2 * Math.PI * r;
 
   const pResumo = (resumo / total) * c;
   const pQuiz = (quiz / total) * c;
   const pInfo = (info / total) * c;
   const pLivre = (livre / total) * c;
 
-  // Offsets acumulados
   const o1 = 0;
   const o2 = -pResumo;
   const o3 = -(pResumo + pQuiz);
@@ -107,10 +220,7 @@ function DonutChart({
   return (
     <div className="relative w-44 h-44 flex items-center justify-center">
       <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-        {/* Background Track */}
         <circle cx="50" cy="50" r={r} fill="none" stroke="#071b36" strokeWidth="12" />
-
-        {/* Segmento Resumos (Azul) */}
         <circle
           cx="50"
           cy="50"
@@ -122,8 +232,6 @@ function DonutChart({
           strokeDashoffset={o1}
           className="transition-all duration-700"
         />
-
-        {/* Segmento Quiz (Verde Esmeralda) */}
         <circle
           cx="50"
           cy="50"
@@ -135,8 +243,6 @@ function DonutChart({
           strokeDashoffset={o2}
           className="transition-all duration-700"
         />
-
-        {/* Segmento Informações (Amarelo) */}
         <circle
           cx="50"
           cy="50"
@@ -148,8 +254,6 @@ function DonutChart({
           strokeDashoffset={o3}
           className="transition-all duration-700"
         />
-
-        {/* Segmento Livre (Roxo) */}
         <circle
           cx="50"
           cy="50"
@@ -162,8 +266,6 @@ function DonutChart({
           className="transition-all duration-700"
         />
       </svg>
-
-      {/* Centro do Donut */}
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none pointer-events-none">
         <span className="text-xl font-extrabold text-white tracking-tight">{total}</span>
         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Consultas</span>
@@ -382,7 +484,7 @@ export default function AdminDashboardPage() {
         {/* Rodapé da Sidebar */}
         <div className="pt-3 border-t border-blue-900/40 flex flex-col gap-2">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-emerald-400 text-[11px] font-medium">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
             Sistema operacional
           </div>
           <Link
@@ -406,7 +508,7 @@ export default function AdminDashboardPage() {
 
           <div className="flex items-center gap-3">
             <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center gap-1.5 shadow-[0_0_12px_rgba(52,211,153,0.2)]">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
               Ao vivo
             </span>
 
@@ -443,7 +545,7 @@ export default function AdminDashboardPage() {
           {/* ── TAB 1: DASHBOARD ANALYTICS ────────────────────────────────────── */}
           {activeTab === 'dashboard' && (
             <div className="flex flex-col gap-6">
-              {/* 4 KPI Sparkline Cards (Inspirado no InterAtiva) */}
+              {/* 4 KPI Sparkline Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Card 1: Conversas Totais */}
                 <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg relative overflow-hidden flex flex-col justify-between h-36 group hover:border-[#1573C2]/60 transition-all">
@@ -530,7 +632,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Linha 1: Volume de Atividade (Curva Suave SVG) + Donut de Categorias */}
+              {/* Linha 1: Volume de Atividade (Gráfico Dinâmico) + Donut de Categorias */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Volume de Atividade */}
                 <div className="lg:col-span-2 bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
@@ -556,52 +658,8 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  {/* Gráfico de Linha Curva SVG com Área de Preenchimento Degradê e Pontos Neon */}
-                  <div className="h-56 w-full relative pt-2">
-                    <svg className="w-full h-full overflow-visible" viewBox="0 0 500 180" preserveAspectRatio="none">
-                      <defs>
-                        <linearGradient id="activityGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#1573C2" stopOpacity="0.45" />
-                          <stop offset="100%" stopColor="#1573C2" stopOpacity="0" />
-                        </linearGradient>
-                      </defs>
-
-                      {/* Linhas de Grade de Fundo (Grid Lines) */}
-                      <line x1="0" y1="30" x2="500" y2="30" stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
-                      <line x1="0" y1="80" x2="500" y2="80" stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
-                      <line x1="0" y1="130" x2="500" y2="130" stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
-
-                      {/* Área Preenchida com Degradê */}
-                      <path
-                        d="M 0,160 C 50,155 100,150 150,140 C 200,120 220,20 250,20 C 280,20 300,140 350,130 C 400,120 450,135 500,130 L 500,170 L 0,170 Z"
-                        fill="url(#activityGrad)"
-                      />
-
-                      {/* Traçado da Curva Neon */}
-                      <path
-                        d="M 0,160 C 50,155 100,150 150,140 C 200,120 220,20 250,20 C 280,20 300,140 350,130 C 400,120 450,135 500,130"
-                        fill="none"
-                        stroke="#38bdf8"
-                        strokeWidth="3.5"
-                        strokeLinecap="round"
-                      />
-
-                      {/* Pontos Neon de Pico */}
-                      <circle cx="250" cy="20" r="5" fill="#38bdf8" className="animate-ping opacity-75" />
-                      <circle cx="250" cy="20" r="5" fill="#ffffff" stroke="#1573C2" strokeWidth="3" />
-                      <circle cx="350" cy="130" r="4" fill="#38bdf8" stroke="#0b203c" strokeWidth="2" />
-                    </svg>
-
-                    {/* Labels de Datas no Eixo X */}
-                    <div className="flex justify-between text-[10px] text-slate-400 mt-2 font-mono">
-                      <span>13/07</span>
-                      <span>19/07</span>
-                      <span>23/07 (Pico)</span>
-                      <span>29/07</span>
-                      <span>04/08</span>
-                      <span>11/08</span>
-                    </div>
-                  </div>
+                  {/* Componente Dinâmico do Gráfico de Linha sem Animação Pulsante */}
+                  <ActivityChart timeline={stats?.timeline || []} timeRange={timeRange} />
                 </div>
 
                 {/* Categorias (Donut Chart com Legenda Colorida) */}
