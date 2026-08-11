@@ -610,23 +610,133 @@ export default function AdminDashboardPage() {
       .sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime());
   }, [stats?.sessions, searchTerm, modeFilter]);
 
-  // Exportar dados em CSV
-  const exportCSV = () => {
-    if (!stats?.sessions) return;
-    let csv = 'ID Sessao,Data Inicio,Ultima Atividade,Interacoes,Tema Principal,Primeira Mensagem\n';
-    stats.sessions.forEach((s) => {
-      const cleanMsg = s.userFirstMsg.replace(/"/g, '""').replace(/\n/g, ' ');
-      csv += `"${s.sessionId}","${s.firstAt}","${s.lastAt}",${s.messageCount},"${s.detectedTheme}","${cleanMsg}"\n`;
-    });
+  const [isExporting, setIsExporting] = useState(false);
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `tutor_enfermagem_metricas_${new Date().toISOString().substring(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // Exportar dados em Planilha Excel Profissional (.XLSX Estilizado)
+  const exportExcel = async () => {
+    if (!stats?.sessions) return;
+    setIsExporting(true);
+    try {
+      const ExcelJS = (await import('exceljs')).default;
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'Tutor de Enfermagem INT 5224';
+      workbook.created = new Date();
+
+      const worksheet = workbook.addWorksheet('Métricas & Conversas', {
+        views: [{ showGridLines: true }]
+      });
+
+      // 1. Cabeçalho / Banner Principal do Relatório
+      worksheet.mergeCells('A1:G1');
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'TUTOR DE ENFERMAGEM INT 5224 — RELATÓRIO DE MÉTRICAS & CONVERSAS';
+      titleCell.font = { name: 'Calibri', size: 13, bold: true, color: { argb: 'FFFFFFFF' } };
+      titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF020B18' } };
+      titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      worksheet.getRow(1).height = 36;
+
+      // 2. Subtítulo com métricas da exportação
+      worksheet.mergeCells('A2:G2');
+      const subTitleCell = worksheet.getCell('A2');
+      subTitleCell.value = `Exportado em ${new Date().toLocaleString('pt-BR')}  |  Total Conversas: ${stats.summary.totalConversations}  |  Total Mensagens: ${stats.summary.totalMessages}  |  Precisão RAG: ${stats.summary.ragAccuracyRate}%`;
+      subTitleCell.font = { name: 'Calibri', size: 10, italic: true, color: { argb: 'FF38BDF8' } };
+      subTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0B203C' } };
+      subTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      worksheet.getRow(2).height = 22;
+
+      // Linha 3 vazia
+      worksheet.getRow(3).height = 8;
+
+      // 3. Cabeçalho da Tabela (Azul Marca com texto em Negrito Branco)
+      const headers = ['#', 'ID da Sessão', 'Data / Hora Início', 'Última Atividade', 'Interações', 'Tema Principal', 'Primeira Mensagem do Estudante'];
+      const headerRow = worksheet.getRow(4);
+      headerRow.values = headers;
+      headerRow.height = 26;
+
+      headerRow.eachCell((cell) => {
+        cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1573C2' } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        cell.border = {
+          top: { style: 'medium', color: { argb: 'FF020B18' } },
+          left: { style: 'thin', color: { argb: 'FF104E85' } },
+          bottom: { style: 'medium', color: { argb: 'FF020B18' } },
+          right: { style: 'thin', color: { argb: 'FF104E85' } },
+        };
+      });
+
+      // 4. Preenchimento dos Dados com Linhas Zebradas e Bordas
+      const sortedSessions = [...stats.sessions].sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime());
+
+      sortedSessions.forEach((s, index) => {
+        const rowIndex = 5 + index;
+        const row = worksheet.getRow(rowIndex);
+        const isEven = index % 2 === 0;
+
+        row.values = [
+          `#${String(index + 1).padStart(2, '0')}`,
+          s.sessionId,
+          new Date(s.firstAt).toLocaleString('pt-BR'),
+          new Date(s.lastAt).toLocaleString('pt-BR'),
+          s.messageCount,
+          s.detectedTheme,
+          s.userFirstMsg || 'Menu Inicial'
+        ];
+        row.height = 22;
+
+        row.eachCell((cell, colNumber) => {
+          cell.font = { name: 'Calibri', size: 10, color: { argb: 'FF1E293B' } };
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: isEven ? 'FFF4F8FC' : 'FFFFFFFF' }
+          };
+
+          // Alinhamento
+          if (colNumber === 1 || colNumber === 5) {
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+          } else if (colNumber === 2) {
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF1573C2' } };
+          } else if (colNumber === 3 || colNumber === 4 || colNumber === 6) {
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+          } else {
+            cell.alignment = { horizontal: 'left', vertical: 'middle' };
+          }
+
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          };
+        });
+      });
+
+      // 5. Largura Personalizada das Colunas
+      worksheet.getColumn(1).width = 8;   // #
+      worksheet.getColumn(2).width = 24;  // ID Sessão
+      worksheet.getColumn(3).width = 22;  // Data Início
+      worksheet.getColumn(4).width = 22;  // Última Atividade
+      worksheet.getColumn(5).width = 14;  // Interações
+      worksheet.getColumn(6).width = 24;  // Tema
+      worksheet.getColumn(7).width = 55;  // Primeira Mensagem
+
+      // 6. Gerar Buffer e Fazer Download do arquivo .xlsx
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `tutor_enfermagem_metricas_${new Date().toISOString().substring(0, 10)}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('Erro ao exportar Excel:', err);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // Imprimir / Salvar Dossiê em PDF
@@ -765,11 +875,14 @@ export default function AdminDashboardPage() {
             </button>
 
             <button
-              onClick={exportCSV}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#1573C2] hover:bg-[#0d4a87] text-white shadow-lg transition-all cursor-pointer active:scale-95"
+              onClick={exportExcel}
+              disabled={isExporting}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#1573C2] hover:bg-[#0d4a87] text-white shadow-lg transition-all cursor-pointer active:scale-95 disabled:opacity-50"
             >
-              <span className="material-symbols-outlined text-[16px]">download</span>
-              Exportar
+              <span className={`material-symbols-outlined text-[16px] ${isExporting ? 'animate-spin' : ''}`}>
+                {isExporting ? 'sync' : 'download'}
+              </span>
+              {isExporting ? 'Gerando Excel...' : 'Exportar Excel'}
             </button>
           </div>
         </header>
