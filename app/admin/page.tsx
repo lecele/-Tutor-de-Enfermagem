@@ -164,13 +164,13 @@ export default function AdminDashboardPage() {
       {/* ── SIDEBAR ───────────────────────────────────────────────────────────── */}
       <aside className="w-64 shrink-0 bg-[#040e1f] border-r border-blue-900/40 flex flex-col p-4 gap-6 select-none z-20">
         {/* Logo Branding */}
-        <div className="flex items-center gap-3 pb-4 border-b border-blue-900/40 pt-1">
-          <div className="w-10 h-10 rounded-xl bg-transparent flex items-center justify-center shrink-0">
-            <img src="/logo.png" alt="Logo Tutor de Enfermagem" className="w-full h-full object-contain tutor-logo-premium" />
+        <div className="flex items-center gap-3.5 pb-4 border-b border-blue-900/40 pt-1">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1573C2]/20 to-blue-950/40 p-1 border border-blue-500/30 flex items-center justify-center shrink-0 shadow-lg">
+            <img src="/logo.png" alt="Logo Tutor de Enfermagem" className="w-full h-full object-contain tutor-logo-premium drop-shadow-md" />
           </div>
           <div className="flex flex-col">
-            <strong className="text-sm font-bold text-white tracking-wide leading-tight">InterAtiva Analytics</strong>
-            <span className="text-[10px] font-semibold tracking-wider text-blue-400 uppercase">Tutor INT 5224</span>
+            <strong className="text-base font-extrabold text-white tracking-wide leading-tight">InterAtiva Analytics</strong>
+            <span className="text-[10px] font-bold tracking-wider text-blue-400 uppercase">Tutor INT 5224</span>
           </div>
         </div>
 
@@ -626,7 +626,8 @@ export default function AdminDashboardPage() {
                   <table className="w-full text-left text-xs">
                     <thead className="bg-[#040e1f] text-slate-400 uppercase font-semibold border-b border-blue-900/40">
                       <tr>
-                        <th className="py-3.5 px-4"># ID Sessão</th>
+                        <th className="py-3.5 px-4 w-20">#</th>
+                        <th className="py-3.5 px-4">Estudante / Sessão</th>
                         <th className="py-3.5 px-4">Primeira Mensagem</th>
                         <th className="py-3.5 px-4">Tema Detectado</th>
                         <th className="py-3.5 px-4">Última Atividade</th>
@@ -636,10 +637,13 @@ export default function AdminDashboardPage() {
                     </thead>
                     <tbody className="divide-y divide-blue-900/30 text-slate-200">
                       {filteredSessions.length > 0 ? (
-                        filteredSessions.map((session) => (
+                        filteredSessions.map((session, index) => (
                           <tr key={session.sessionId} className="hover:bg-blue-950/30 transition-colors">
-                            <td className="py-3.5 px-4 font-mono font-bold text-blue-400">
-                              #{session.sessionId.substring(0, 8)}
+                            <td className="py-3.5 px-4 font-mono font-bold text-base text-white">
+                              #{String(index + 1).padStart(2, '0')}
+                            </td>
+                            <td className="py-3.5 px-4 font-mono text-xs font-semibold text-blue-400">
+                              {session.sessionId}
                             </td>
                             <td className="py-3.5 px-4 max-w-xs truncate font-medium text-slate-300">
                               {session.userFirstMsg || 'Menu Inicial'}
