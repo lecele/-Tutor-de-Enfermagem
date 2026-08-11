@@ -667,7 +667,7 @@ export default function AdminDashboardPage() {
             <img src="/logo.png" alt="Logo Tutor de Enfermagem" className="w-full h-full object-contain tutor-logo-premium drop-shadow-2xl scale-105" />
           </div>
           <div className="flex flex-col">
-            <strong className="text-lg font-black text-white tracking-wide leading-tight">InterAtiva Analytics</strong>
+            <strong className="text-lg font-black text-white tracking-wide leading-tight">Tutor Analytics</strong>
             <span className="text-[11px] font-bold tracking-wider text-blue-400 uppercase">Tutor INT 5224</span>
           </div>
         </div>
@@ -743,7 +743,7 @@ export default function AdminDashboardPage() {
         {/* Top Header */}
         <header className="h-16 shrink-0 border-b border-blue-900/40 bg-[#020b18]/90 backdrop-blur-md px-6 flex items-center justify-between z-10">
           <div>
-            <h1 className="text-base font-bold text-white tracking-wide">Painel InterAtiva</h1>
+            <h1 className="text-base font-bold text-white tracking-wide">Painel Tutor de Enfermagem</h1>
             <p className="text-[11px] text-slate-400">Visão geral · Atualizado agora</p>
           </div>
 
