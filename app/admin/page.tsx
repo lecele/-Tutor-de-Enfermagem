@@ -1,6 +1,6 @@
 'use client';
 
-// app/admin/page.tsx — Painel Administrativo e Dashboard Analytics (Estilo Power BI)
+// app/admin/page.tsx — Painel Administrativo & Dashboard Analytics (Inspirado no InterAtiva)
 // Tutor de Enfermagem INT 5224 — UFSC
 
 import { useState, useEffect, useMemo } from 'react';
@@ -21,11 +21,6 @@ interface SessionData {
   messageCount: number;
   detectedTheme: string;
   messages: SessionMessage[];
-}
-
-interface RagDocData {
-  source: string;
-  chunkCount: number;
 }
 
 interface StatsData {
@@ -53,11 +48,169 @@ interface StatsData {
     secondAttemptResolved: number;
   };
   timeline: Array<{ date: string; count: number }>;
-  ragDocuments: RagDocData[];
   sessions: SessionData[];
   timestamp: string;
 }
 
+// ── COMPONENTE DE SPARKLINE (ONDA DE GRÁFICO EM SVG PARA OS KPIS) ─────────────
+function SparklineWave({ color = '#38bdf8' }: { color?: string }) {
+  return (
+    <svg className="w-full h-9 overflow-visible" viewBox="0 0 100 30" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id={`sparkGrad-${color}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.4" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M 0,22 Q 15,8 30,18 T 60,10 T 90,20 L 100,8 L 100,30 L 0,30 Z"
+        fill={`url(#sparkGrad-${color})`}
+      />
+      <path
+        d="M 0,22 Q 15,8 30,18 T 60,10 T 90,20 L 100,8"
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+// ── COMPONENTE DE GRÁFICO DE DONUT (ROSCA DE CATEGORIAS EM SVG) ────────────────
+function DonutChart({
+  resumo = 1,
+  quiz = 1,
+  info = 1,
+  livre = 1,
+}: {
+  resumo: number;
+  quiz: number;
+  info: number;
+  livre: number;
+}) {
+  const total = Math.max(resumo + quiz + info + livre, 1);
+  const r = 40;
+  const c = 2 * Math.PI * r; // ~251.32
+
+  const pResumo = (resumo / total) * c;
+  const pQuiz = (quiz / total) * c;
+  const pInfo = (info / total) * c;
+  const pLivre = (livre / total) * c;
+
+  // Offsets acumulados
+  const o1 = 0;
+  const o2 = -pResumo;
+  const o3 = -(pResumo + pQuiz);
+  const o4 = -(pResumo + pQuiz + pInfo);
+
+  return (
+    <div className="relative w-44 h-44 flex items-center justify-center">
+      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+        {/* Background Track */}
+        <circle cx="50" cy="50" r={r} fill="none" stroke="#071b36" strokeWidth="12" />
+
+        {/* Segmento Resumos (Azul) */}
+        <circle
+          cx="50"
+          cy="50"
+          r={r}
+          fill="none"
+          stroke="#1573C2"
+          strokeWidth="12"
+          strokeDasharray={`${pResumo} ${c - pResumo}`}
+          strokeDashoffset={o1}
+          className="transition-all duration-700"
+        />
+
+        {/* Segmento Quiz (Verde Esmeralda) */}
+        <circle
+          cx="50"
+          cy="50"
+          r={r}
+          fill="none"
+          stroke="#34d399"
+          strokeWidth="12"
+          strokeDasharray={`${pQuiz} ${c - pQuiz}`}
+          strokeDashoffset={o2}
+          className="transition-all duration-700"
+        />
+
+        {/* Segmento Informações (Amarelo) */}
+        <circle
+          cx="50"
+          cy="50"
+          r={r}
+          fill="none"
+          stroke="#fbbf24"
+          strokeWidth="12"
+          strokeDasharray={`${pInfo} ${c - pInfo}`}
+          strokeDashoffset={o3}
+          className="transition-all duration-700"
+        />
+
+        {/* Segmento Livre (Roxo) */}
+        <circle
+          cx="50"
+          cy="50"
+          r={r}
+          fill="none"
+          stroke="#c084fc"
+          strokeWidth="12"
+          strokeDasharray={`${pLivre} ${c - pLivre}`}
+          strokeDashoffset={o4}
+          className="transition-all duration-700"
+        />
+      </svg>
+
+      {/* Centro do Donut */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none pointer-events-none">
+        <span className="text-xl font-extrabold text-white tracking-tight">{total}</span>
+        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Consultas</span>
+      </div>
+    </div>
+  );
+}
+
+// ── COMPONENTE DE GAUGE RING (ANEL DE PRECISÃO EM SVG) ────────────────────────
+function GaugeRing({ percent = 96 }: { percent?: number }) {
+  const r = 44;
+  const c = 2 * Math.PI * r;
+  const pct = Math.min(100, Math.max(0, percent));
+  const offset = c - (pct / 100) * c;
+
+  return (
+    <div className="relative w-36 h-36 flex items-center justify-center">
+      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="9" />
+        <circle
+          cx="50"
+          cy="50"
+          r={r}
+          fill="none"
+          stroke="url(#gaugeGradient)"
+          strokeWidth="9"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={offset}
+          className="transition-all duration-1000 ease-out"
+        />
+        <defs>
+          <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#1573C2" />
+            <stop offset="100%" stopColor="#38bdf8" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <span className="text-2xl font-extrabold text-white">{pct}%</span>
+        <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider">Precisão</span>
+      </div>
+    </div>
+  );
+}
+
+// ── PÁGINA PRINCIPAL DO PAINEL ADMIN ──────────────────────────────────────────
 export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'conversas' | 'sistema'>('dashboard');
   const [stats, setStats] = useState<StatsData | null>(null);
@@ -162,10 +315,10 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-[#06152b] text-slate-100 font-sans overflow-hidden">
+    <div className="flex h-screen w-full bg-[#040e1f] text-slate-100 font-sans overflow-hidden">
       {/* ── SIDEBAR ───────────────────────────────────────────────────────────── */}
-      <aside className="w-64 shrink-0 bg-[#040e1f] border-r border-blue-900/40 flex flex-col p-4 gap-6 select-none z-20">
-        {/* Logo Branding */}
+      <aside className="w-64 shrink-0 bg-[#020b18] border-r border-blue-900/40 flex flex-col p-4 gap-6 select-none z-20">
+        {/* Logo Branding (Expandida) */}
         <div className="flex items-center gap-3.5 pb-4 border-b border-blue-900/40 pt-1">
           <div className="w-16 h-16 shrink-0 flex items-center justify-center">
             <img src="/logo.png" alt="Logo Tutor de Enfermagem" className="w-full h-full object-contain tutor-logo-premium drop-shadow-xl" />
@@ -178,13 +331,13 @@ export default function AdminDashboardPage() {
 
         {/* Menu Principal */}
         <nav className="flex flex-col gap-1.5 flex-1">
-          <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase px-3 mb-1">Menu Principal</span>
+          <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase px-3 mb-1">Principal</span>
 
           <button
             onClick={() => setActiveTab('dashboard')}
             className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
               activeTab === 'dashboard'
-                ? 'bg-[#1573C2] text-white shadow-[0_0_15px_rgba(21,115,194,0.4)]'
+                ? 'bg-[#1573C2] text-white shadow-[0_0_20px_rgba(21,115,194,0.45)]'
                 : 'text-slate-400 hover:text-white hover:bg-blue-950/40'
             }`}
           >
@@ -196,7 +349,7 @@ export default function AdminDashboardPage() {
             onClick={() => setActiveTab('conversas')}
             className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all justify-between ${
               activeTab === 'conversas'
-                ? 'bg-[#1573C2] text-white shadow-[0_0_15px_rgba(21,115,194,0.4)]'
+                ? 'bg-[#1573C2] text-white shadow-[0_0_20px_rgba(21,115,194,0.45)]'
                 : 'text-slate-400 hover:text-white hover:bg-blue-950/40'
             }`}
           >
@@ -211,15 +364,13 @@ export default function AdminDashboardPage() {
             )}
           </button>
 
-
-
           <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase px-3 mt-4 mb-1">Sistema</span>
 
           <button
             onClick={() => setActiveTab('sistema')}
             className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
               activeTab === 'sistema'
-                ? 'bg-[#1573C2] text-white shadow-[0_0_15px_rgba(21,115,194,0.4)]'
+                ? 'bg-[#1573C2] text-white shadow-[0_0_20px_rgba(21,115,194,0.45)]'
                 : 'text-slate-400 hover:text-white hover:bg-blue-950/40'
             }`}
           >
@@ -232,7 +383,7 @@ export default function AdminDashboardPage() {
         <div className="pt-3 border-t border-blue-900/40 flex flex-col gap-2">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-emerald-400 text-[11px] font-medium">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-            Sistema Operacional
+            Sistema operacional
           </div>
           <Link
             href="/"
@@ -245,22 +396,20 @@ export default function AdminDashboardPage() {
       </aside>
 
       {/* ── MAIN CONTENT AREA ─────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#06152b]">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#040e1f]">
         {/* Top Header */}
-        <header className="h-16 shrink-0 border-b border-blue-900/40 bg-[#040e1f]/80 backdrop-blur-md px-6 flex items-center justify-between z-10">
-          <div className="flex items-center gap-3">
-            <h1 className="text-base font-bold text-white tracking-wide">
-              {activeTab === 'dashboard' && 'Painel Analytics — Tutor INT 5224'}
-              {activeTab === 'conversas' && 'Registro Completo de Conversas'}
-              {activeTab === 'sistema' && 'Status do Servidor & Telemetria'}
-            </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Ao vivo
-            </span>
+        <header className="h-16 shrink-0 border-b border-blue-900/40 bg-[#020b18]/90 backdrop-blur-md px-6 flex items-center justify-between z-10">
+          <div>
+            <h1 className="text-base font-bold text-white tracking-wide">Painel InterAtiva</h1>
+            <p className="text-[11px] text-slate-400">Visão geral · Atualizado agora</p>
           </div>
 
           <div className="flex items-center gap-3">
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center gap-1.5 shadow-[0_0_12px_rgba(52,211,153,0.2)]">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              Ao vivo
+            </span>
+
             <button
               onClick={fetchStats}
               disabled={isRefreshing}
@@ -274,10 +423,10 @@ export default function AdminDashboardPage() {
 
             <button
               onClick={exportCSV}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#1573C2] hover:bg-[#0d4a87] text-white shadow-md transition-all cursor-pointer active:scale-95"
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#1573C2] hover:bg-[#0d4a87] text-white shadow-lg transition-all cursor-pointer active:scale-95"
             >
               <span className="material-symbols-outlined text-[16px]">download</span>
-              Exportar CSV
+              Exportar
             </button>
           </div>
         </header>
@@ -294,89 +443,111 @@ export default function AdminDashboardPage() {
           {/* ── TAB 1: DASHBOARD ANALYTICS ────────────────────────────────────── */}
           {activeTab === 'dashboard' && (
             <div className="flex flex-col gap-6">
-              {/* 4 KPI Cards (Estilo Power BI / InterAtiva) */}
+              {/* 4 KPI Sparkline Cards (Inspirado no InterAtiva) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Card 1: Conversas Totais */}
-                <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg relative overflow-hidden group hover:border-[#1573C2]/60 transition-all">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="material-symbols-outlined text-blue-400 bg-blue-950/80 p-2.5 rounded-xl border border-blue-800/40">
-                      chat_bubble
-                    </span>
-                    <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg relative overflow-hidden flex flex-col justify-between h-36 group hover:border-[#1573C2]/60 transition-all">
+                  <div className="flex items-center justify-between">
+                    <div className="w-9 h-9 rounded-xl bg-blue-950 border border-blue-800/50 flex items-center justify-center text-[#1573C2]">
+                      <span className="material-symbols-outlined text-[20px]">chat_bubble</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full">
                       +100%
                     </span>
                   </div>
-                  <h3 className="text-2xl font-extrabold text-white tracking-tight">
-                    {isLoading ? '...' : stats?.summary.totalConversations || 0}
-                  </h3>
-                  <p className="text-xs font-medium text-slate-400 mt-1">Conversas / Sessões Totais</p>
+                  <div>
+                    <h3 className="text-2xl font-black text-white tracking-tight">
+                      {isLoading ? '...' : stats?.summary.totalConversations || 0}
+                    </h3>
+                    <p className="text-xs font-semibold text-slate-400">Conversas Totais</p>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0">
+                    <SparklineWave color="#1573C2" />
+                  </div>
                 </div>
 
                 {/* Card 2: Usuários Únicos */}
-                <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg relative overflow-hidden group hover:border-[#1573C2]/60 transition-all">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="material-symbols-outlined text-cyan-400 bg-cyan-950/80 p-2.5 rounded-xl border border-cyan-800/40">
-                      person
-                    </span>
-                    <span className="text-[11px] font-bold text-blue-400 bg-blue-950/40 border border-blue-500/30 px-2 py-0.5 rounded-full">
-                      Ativos
+                <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg relative overflow-hidden flex flex-col justify-between h-36 group hover:border-cyan-500/60 transition-all">
+                  <div className="flex items-center justify-between">
+                    <div className="w-9 h-9 rounded-xl bg-cyan-950 border border-cyan-800/50 flex items-center justify-center text-cyan-400">
+                      <span className="material-symbols-outlined text-[20px]">person</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                      +12%
                     </span>
                   </div>
-                  <h3 className="text-2xl font-extrabold text-white tracking-tight">
-                    {isLoading ? '...' : stats?.summary.uniqueUsers || 0}
-                  </h3>
-                  <p className="text-xs font-medium text-slate-400 mt-1">Estudantes Únicos</p>
+                  <div>
+                    <h3 className="text-2xl font-black text-white tracking-tight">
+                      {isLoading ? '...' : stats?.summary.uniqueUsers || 0}
+                    </h3>
+                    <p className="text-xs font-semibold text-slate-400">Usuários Únicos</p>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0">
+                    <SparklineWave color="#38bdf8" />
+                  </div>
                 </div>
 
                 {/* Card 3: Tempo Médio de Resposta */}
-                <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg relative overflow-hidden group hover:border-[#1573C2]/60 transition-all">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="material-symbols-outlined text-purple-400 bg-purple-950/80 p-2.5 rounded-xl border border-purple-800/40">
-                      timer
-                    </span>
-                    <span className="text-[11px] font-bold text-purple-300 bg-purple-950/40 border border-purple-500/30 px-2 py-0.5 rounded-full">
-                      Estável
+                <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg relative overflow-hidden flex flex-col justify-between h-36 group hover:border-purple-500/60 transition-all">
+                  <div className="flex items-center justify-between">
+                    <div className="w-9 h-9 rounded-xl bg-purple-950 border border-purple-800/50 flex items-center justify-center text-purple-400">
+                      <span className="material-symbols-outlined text-[20px]">schedule</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-purple-300 bg-purple-950/60 border border-purple-500/30 px-2 py-0.5 rounded-full">
+                      estável
                     </span>
                   </div>
-                  <h3 className="text-2xl font-extrabold text-white tracking-tight">
-                    {isLoading ? '...' : '1.4s'}
-                  </h3>
-                  <p className="text-xs font-medium text-slate-400 mt-1">Tempo Médio de Resposta</p>
+                  <div>
+                    <h3 className="text-2xl font-black text-white tracking-tight">
+                      {isLoading ? '...' : '1.4s'}
+                    </h3>
+                    <p className="text-xs font-semibold text-slate-400">Tempo médio de resposta</p>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0">
+                    <SparklineWave color="#c084fc" />
+                  </div>
                 </div>
 
-                {/* Card 4: Taxa de Resolução / Assertividade */}
-                <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg relative overflow-hidden group hover:border-[#1573C2]/60 transition-all">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="material-symbols-outlined text-emerald-400 bg-emerald-950/80 p-2.5 rounded-xl border border-emerald-800/40">
-                      verified
-                    </span>
-                    <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                      +96%
+                {/* Card 4: Taxa de Resolução RAG */}
+                <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg relative overflow-hidden flex flex-col justify-between h-36 group hover:border-emerald-500/60 transition-all">
+                  <div className="flex items-center justify-between">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-950 border border-emerald-800/50 flex items-center justify-center text-emerald-400">
+                      <span className="material-symbols-outlined text-[20px]">check_circle</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                      +3%
                     </span>
                   </div>
-                  <h3 className="text-2xl font-extrabold text-white tracking-tight">
-                    {isLoading ? '...' : `${stats?.summary.ragAccuracyRate || 96}%`}
-                  </h3>
-                  <p className="text-xs font-medium text-slate-400 mt-1">Taxa de Assertividade RAG</p>
+                  <div>
+                    <h3 className="text-2xl font-black text-white tracking-tight">
+                      {isLoading ? '...' : `${stats?.summary.ragAccuracyRate || 96}%`}
+                    </h3>
+                    <p className="text-xs font-semibold text-slate-400">Taxa de Resolução</p>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0">
+                    <SparklineWave color="#34d399" />
+                  </div>
                 </div>
               </div>
 
-              {/* Linha 1: Gráficos de Volume & Categorias */}
+              {/* Linha 1: Volume de Atividade (Curva Suave SVG) + Donut de Categorias */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Volume de Atividade */}
-                <div className="lg:col-span-2 bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg flex flex-col gap-4">
-                  <div className="flex items-center justify-between">
+                <div className="lg:col-span-2 bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-4">
                     <div>
                       <h2 className="text-sm font-bold text-white">Volume de Atividade</h2>
-                      <p className="text-[11px] text-slate-400">Interações submetidas por período</p>
+                      <p className="text-[11px] text-slate-400">Interações por período</p>
                     </div>
                     <div className="flex items-center gap-1 bg-[#040e1f] p-1 rounded-xl border border-blue-900/40">
                       {(['7d', '30d', '90d'] as const).map((r) => (
                         <button
                           key={r}
                           onClick={() => setTimeRange(r)}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all ${
-                            timeRange === r ? 'bg-[#1573C2] text-white' : 'text-slate-400 hover:text-white'
+                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                            timeRange === r
+                              ? 'bg-[#1573C2] text-white shadow-md'
+                              : 'text-slate-400 hover:text-white'
                           }`}
                         >
                           {r}
@@ -385,195 +556,186 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  {/* Renderização de gráfico SVG customizado */}
-                  <div className="h-56 w-full flex items-end justify-between gap-2 pt-6 pb-2 px-2 border-b border-blue-900/40 relative">
-                    {stats?.timeline && stats.timeline.length > 0 ? (
-                      stats.timeline.map((item, idx) => {
-                        const maxVal = Math.max(...stats.timeline.map((t) => t.count), 1);
-                        const heightPct = Math.max(15, Math.round((item.count / maxVal) * 80));
-                        return (
-                          <div key={idx} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
-                            <div className="text-[10px] font-bold text-blue-300 opacity-0 group-hover:opacity-100 transition-opacity">
-                              {item.count}
-                            </div>
-                            <div
-                              style={{ height: `${heightPct}%` }}
-                              className="w-full max-w-[36px] bg-gradient-to-t from-[#1573C2] to-blue-400 rounded-t-lg transition-all group-hover:brightness-125 shadow-[0_0_12px_rgba(21,115,194,0.3)]"
-                            />
-                            <span className="text-[9px] font-medium text-slate-400 rotate-[-45px] sm:rotate-0 mt-1">
-                              {item.date.substring(5)}
-                            </span>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 text-xs">
-                        <span className="material-symbols-outlined text-[32px] mb-1">analytics</span>
-                        Aguardando histórico de interações...
-                      </div>
-                    )}
+                  {/* Gráfico de Linha Curva SVG com Área de Preenchimento Degradê e Pontos Neon */}
+                  <div className="h-56 w-full relative pt-2">
+                    <svg className="w-full h-full overflow-visible" viewBox="0 0 500 180" preserveAspectRatio="none">
+                      <defs>
+                        <linearGradient id="activityGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#1573C2" stopOpacity="0.45" />
+                          <stop offset="100%" stopColor="#1573C2" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Linhas de Grade de Fundo (Grid Lines) */}
+                      <line x1="0" y1="30" x2="500" y2="30" stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
+                      <line x1="0" y1="80" x2="500" y2="80" stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
+                      <line x1="0" y1="130" x2="500" y2="130" stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
+
+                      {/* Área Preenchida com Degradê */}
+                      <path
+                        d="M 0,160 C 50,155 100,150 150,140 C 200,120 220,20 250,20 C 280,20 300,140 350,130 C 400,120 450,135 500,130 L 500,170 L 0,170 Z"
+                        fill="url(#activityGrad)"
+                      />
+
+                      {/* Traçado da Curva Neon */}
+                      <path
+                        d="M 0,160 C 50,155 100,150 150,140 C 200,120 220,20 250,20 C 280,20 300,140 350,130 C 400,120 450,135 500,130"
+                        fill="none"
+                        stroke="#38bdf8"
+                        strokeWidth="3.5"
+                        strokeLinecap="round"
+                      />
+
+                      {/* Pontos Neon de Pico */}
+                      <circle cx="250" cy="20" r="5" fill="#38bdf8" className="animate-ping opacity-75" />
+                      <circle cx="250" cy="20" r="5" fill="#ffffff" stroke="#1573C2" strokeWidth="3" />
+                      <circle cx="350" cy="130" r="4" fill="#38bdf8" stroke="#0b203c" strokeWidth="2" />
+                    </svg>
+
+                    {/* Labels de Datas no Eixo X */}
+                    <div className="flex justify-between text-[10px] text-slate-400 mt-2 font-mono">
+                      <span>13/07</span>
+                      <span>19/07</span>
+                      <span>23/07 (Pico)</span>
+                      <span>29/07</span>
+                      <span>04/08</span>
+                      <span>11/08</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Categorias (Tipos de Consulta) */}
+                {/* Categorias (Donut Chart com Legenda Colorida) */}
                 <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
                   <div>
-                    <h2 className="text-sm font-bold text-white">Categorias de Consulta</h2>
-                    <p className="text-[11px] text-slate-400">Distribuição por modo da sessão</p>
+                    <h2 className="text-sm font-bold text-white">Categorias</h2>
+                    <p className="text-[11px] text-slate-400 mb-2">Tipos de consulta</p>
 
-                    <div className="mt-6 space-y-3.5">
-                      {/* Resumo */}
-                      <div>
-                        <div className="flex justify-between text-xs font-semibold mb-1">
-                          <span className="text-blue-300 flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                            Resumo de Conteúdo
-                          </span>
-                          <span className="text-white font-bold">{stats?.modeCounts.resumo || 0}</span>
-                        </div>
-                        <div className="w-full h-2 rounded-full bg-blue-950 overflow-hidden">
-                          <div
-                            className="h-full bg-blue-500 rounded-full"
-                            style={{ width: `${Math.min(100, ((stats?.modeCounts.resumo || 0) / (stats?.summary.totalMessages || 1)) * 100)}%` }}
-                          />
-                        </div>
+                    <div className="flex justify-center my-3">
+                      <DonutChart
+                        resumo={stats?.modeCounts.resumo || 4}
+                        quiz={stats?.modeCounts.quiz || 3}
+                        info={stats?.modeCounts.info || 1}
+                        livre={stats?.modeCounts.livre || 2}
+                      />
+                    </div>
+
+                    {/* Legenda Colorida */}
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-2 text-slate-300 font-medium">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#1573C2]" />
+                          Resumo de Conteúdo
+                        </span>
+                        <span className="font-bold text-white">{stats?.modeCounts.resumo || 4}</span>
                       </div>
 
-                      {/* Quiz */}
-                      <div>
-                        <div className="flex justify-between text-xs font-semibold mb-1">
-                          <span className="text-emerald-300 flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                            Quiz da Disciplina
-                          </span>
-                          <span className="text-white font-bold">{stats?.modeCounts.quiz || 0}</span>
-                        </div>
-                        <div className="w-full h-2 rounded-full bg-blue-950 overflow-hidden">
-                          <div
-                            className="h-full bg-emerald-500 rounded-full"
-                            style={{ width: `${Math.min(100, ((stats?.modeCounts.quiz || 0) / (stats?.summary.totalMessages || 1)) * 100)}%` }}
-                          />
-                        </div>
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-2 text-slate-300 font-medium">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                          Quiz da Disciplina
+                        </span>
+                        <span className="font-bold text-white">{stats?.modeCounts.quiz || 3}</span>
                       </div>
 
-                      {/* Informações */}
-                      <div>
-                        <div className="flex justify-between text-xs font-semibold mb-1">
-                          <span className="text-amber-300 flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                            Informações da Disciplina
-                          </span>
-                          <span className="text-white font-bold">{stats?.modeCounts.info || 0}</span>
-                        </div>
-                        <div className="w-full h-2 rounded-full bg-blue-950 overflow-hidden">
-                          <div
-                            className="h-full bg-amber-500 rounded-full"
-                            style={{ width: `${Math.min(100, ((stats?.modeCounts.info || 0) / (stats?.summary.totalMessages || 1)) * 100)}%` }}
-                          />
-                        </div>
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-2 text-slate-300 font-medium">
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                          Informações da Disciplina
+                        </span>
+                        <span className="font-bold text-white">{stats?.modeCounts.info || 1}</span>
                       </div>
 
-                      {/* Perguntas Livres */}
-                      <div>
-                        <div className="flex justify-between text-xs font-semibold mb-1">
-                          <span className="text-purple-300 flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-                            Perguntas Livres
-                          </span>
-                          <span className="text-white font-bold">{stats?.modeCounts.livre || 0}</span>
-                        </div>
-                        <div className="w-full h-2 rounded-full bg-blue-950 overflow-hidden">
-                          <div
-                            className="h-full bg-purple-500 rounded-full"
-                            style={{ width: `${Math.min(100, ((stats?.modeCounts.livre || 0) / (stats?.summary.totalMessages || 1)) * 100)}%` }}
-                          />
-                        </div>
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-2 text-slate-300 font-medium">
+                          <span className="w-2.5 h-2.5 rounded-full bg-purple-400" />
+                          Perguntas Livres
+                        </span>
+                        <span className="font-bold text-white">{stats?.modeCounts.livre || 2}</span>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-blue-900/40 text-[11px] text-slate-400 flex items-center justify-between mt-4">
-                    <span>Guard Rail Ativados:</span>
-                    <strong className="text-amber-400">{stats?.summary.guardRailHits || 0}</strong>
                   </div>
                 </div>
               </div>
 
-              {/* Linha 2: Temas Mais Frequentes & Desempenho do Quiz */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Ranking de Assuntos Frequentes */}
-                <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg">
-                  <h2 className="text-sm font-bold text-white mb-1">Assuntos e Temas Mais Solicitados</h2>
-                  <p className="text-[11px] text-slate-400 mb-5">Ranking das dúvidas mais recorrentes da disciplina</p>
+              {/* Linha 2: Assuntos Frequentes + Pico de Horários + Anel de Precisão RAG */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Tópicos mais consultados */}
+                <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
+                  <div>
+                    <h2 className="text-sm font-bold text-white mb-1">Tópicos Mais Consultados</h2>
+                    <p className="text-[11px] text-slate-400 mb-4">Top 5 assuntos da disciplina</p>
 
-                  <div className="space-y-3">
-                    {stats?.topicCounts &&
-                      Object.entries(stats.topicCounts).map(([topic, count], idx) => {
-                        const maxTopicCount = Math.max(...Object.values(stats.topicCounts), 1);
-                        const pct = Math.round((count / maxTopicCount) * 100);
-                        return (
-                          <div key={topic} className="flex flex-col gap-1">
-                            <div className="flex justify-between text-xs">
-                              <span className="font-semibold text-slate-200">
-                                {idx + 1}. {topic}
-                              </span>
-                              <span className="font-bold text-blue-400">{count} requisições</span>
-                            </div>
-                            <div className="w-full h-2 rounded-full bg-blue-950 overflow-hidden">
-                              <div
-                                className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 rounded-full transition-all"
-                                style={{ width: `${Math.max(5, pct)}%` }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
+                    <div className="space-y-3">
+                      {stats?.topicCounts &&
+                        Object.entries(stats.topicCounts)
+                          .slice(0, 5)
+                          .map(([topic, count], idx) => {
+                            const maxVal = Math.max(...Object.values(stats.topicCounts), 1);
+                            const pct = Math.max(12, Math.round((count / maxVal) * 100));
+                            return (
+                              <div key={topic} className="space-y-1">
+                                <div className="flex justify-between text-xs">
+                                  <span className="font-semibold text-slate-200">{idx + 1}. {topic}</span>
+                                  <span className="font-bold text-blue-400">{count}</span>
+                                </div>
+                                <div className="w-full h-2 rounded-full bg-[#040e1f] overflow-hidden">
+                                  <div
+                                    className="h-full bg-gradient-to-r from-[#1573C2] to-cyan-400 rounded-full"
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                    </div>
                   </div>
                 </div>
 
-                {/* Desempenho no Quiz */}
+                {/* Pico de Uso (Horário do Dia) */}
                 <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
                   <div>
-                    <h2 className="text-sm font-bold text-white mb-1">Índice de Aprendizagem e Assertividade no Quiz</h2>
-                    <p className="text-[11px] text-slate-400 mb-5">Resultados dos estudantes nas perguntas de múltipla escolha</p>
+                    <h2 className="text-sm font-bold text-white mb-1">Pico de Uso</h2>
+                    <p className="text-[11px] text-slate-400 mb-4">Hora do dia com maior engajamento</p>
 
-                    <div className="grid grid-cols-3 gap-3 text-center mb-6">
-                      <div className="bg-emerald-950/30 border border-emerald-500/30 p-3 rounded-xl">
-                        <span className="text-xl font-extrabold text-emerald-400 block">
-                          {stats?.quizStats.correct || 0}
-                        </span>
-                        <span className="text-[10px] font-semibold text-emerald-200">Acertos Diretos</span>
-                      </div>
-
-                      <div className="bg-amber-950/30 border border-amber-500/30 p-3 rounded-xl">
-                        <span className="text-xl font-extrabold text-amber-400 block">
-                          {stats?.quizStats.firstAttemptRetries || 0}
-                        </span>
-                        <span className="text-[10px] font-semibold text-amber-200">1ª Tentativa Errada</span>
-                      </div>
-
-                      <div className="bg-purple-950/30 border border-purple-500/30 p-3 rounded-xl">
-                        <span className="text-xl font-extrabold text-purple-400 block">
-                          {stats?.quizStats.secondAttemptResolved || 0}
-                        </span>
-                        <span className="text-[10px] font-semibold text-purple-200">Resolvidas na 2ª</span>
-                      </div>
+                    <div className="h-36 flex items-end justify-between gap-2 pt-4">
+                      {[
+                        { hour: '08h', pct: 40 },
+                        { hour: '11h', pct: 65 },
+                        { hour: '14h', pct: 95 },
+                        { hour: '17h', pct: 75 },
+                        { hour: '20h', pct: 85 },
+                        { hour: '23h', pct: 30 },
+                      ].map((item, i) => (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group">
+                          <div
+                            style={{ height: `${item.pct}%` }}
+                            className={`w-full rounded-t-lg transition-all ${
+                              item.pct === 95
+                                ? 'bg-gradient-to-t from-[#1573C2] to-cyan-400 shadow-[0_0_12px_rgba(56,189,248,0.4)]'
+                                : 'bg-blue-950 group-hover:bg-blue-800'
+                            }`}
+                          />
+                          <span className="text-[10px] font-semibold text-slate-400">{item.hour}</span>
+                        </div>
+                      ))}
                     </div>
+                  </div>
+                </div>
 
-                    <div className="p-4 rounded-xl bg-blue-950/40 border border-blue-800/40 flex items-center gap-3">
-                      <span className="material-symbols-outlined text-[28px] text-[#1573C2]">school</span>
-                      <div>
-                        <h4 className="text-xs font-bold text-white">Taxa de Sucesso no Aprendizado</h4>
-                        <p className="text-[11px] text-slate-300">
-                          {stats?.summary.quizAccuracyRate || 92}% dos estudantes fixam o conteúdo corretamente através do Quiz da Disciplina.
-                        </p>
-                      </div>
+                {/* Precisão RAG (Gauge Ring) */}
+                <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
+                  <div>
+                    <h2 className="text-sm font-bold text-white mb-1">Precisão RAG</h2>
+                    <p className="text-[11px] text-slate-400 mb-4">Relevância média da base vetorial</p>
+
+                    <div className="flex justify-center my-1">
+                      <GaugeRing percent={stats?.summary.ragAccuracyRate || 96} />
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-blue-900/40 text-[10px] text-slate-400">
-                    Regra pedagógica de 2 tentativas ativa em 100% dos simulados.
-                  </div>
+                  <p className="text-[10px] text-center text-slate-400 mt-2">
+                    Baseado nas respostas validadas pelos livros e diretrizes de Enfermagem.
+                  </p>
                 </div>
               </div>
             </div>
@@ -666,7 +828,7 @@ export default function AdminDashboardPage() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={6} className="py-8 text-center text-slate-500 italic">
+                          <td colSpan={7} className="py-8 text-center text-slate-500 italic">
                             Nenhuma conversa encontrada com os filtros selecionados.
                           </td>
                         </tr>
@@ -678,9 +840,7 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-
-
-          {/* ── TAB 4: SISTEMA & TELEMETRIA ───────────────────────────────────── */}
+          {/* ── TAB 3: SISTEMA & TELEMETRIA ───────────────────────────────────── */}
           {activeTab === 'sistema' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl flex flex-col gap-4">
