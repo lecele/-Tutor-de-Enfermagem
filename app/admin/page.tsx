@@ -95,21 +95,23 @@ export default function AdminDashboardPage() {
     fetchStats();
   }, []);
 
-  // Conversas filtradas
+  // Conversas filtradas (Ordenadas por mais recentes primeiro)
   const filteredSessions = useMemo(() => {
     if (!stats?.sessions) return [];
-    return stats.sessions.filter((s) => {
-      const matchSearch =
-        s.sessionId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.userFirstMsg.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.detectedTheme.toLowerCase().includes(searchTerm.toLowerCase());
+    return stats.sessions
+      .filter((s) => {
+        const matchSearch =
+          s.sessionId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          s.userFirstMsg.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          s.detectedTheme.toLowerCase().includes(searchTerm.toLowerCase());
 
-      if (modeFilter === 'all') return matchSearch;
-      if (modeFilter === 'quiz') return matchSearch && s.messages.some(m => m.content.toLowerCase().includes('quiz') || m.content.toLowerCase().includes('simulado'));
-      if (modeFilter === 'resumo') return matchSearch && s.messages.some(m => m.content.toLowerCase().includes('resumo'));
-      if (modeFilter === 'info') return matchSearch && s.messages.some(m => m.content.toLowerCase().includes('informações'));
-      return matchSearch;
-    });
+        if (modeFilter === 'all') return matchSearch;
+        if (modeFilter === 'quiz') return matchSearch && s.messages.some(m => m.content.toLowerCase().includes('quiz') || m.content.toLowerCase().includes('simulado'));
+        if (modeFilter === 'resumo') return matchSearch && s.messages.some(m => m.content.toLowerCase().includes('resumo'));
+        if (modeFilter === 'info') return matchSearch && s.messages.some(m => m.content.toLowerCase().includes('informações'));
+        return matchSearch;
+      })
+      .sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime());
   }, [stats?.sessions, searchTerm, modeFilter]);
 
   // Exportar dados em CSV
@@ -607,6 +609,10 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <span className="text-[11px] font-semibold text-blue-300 bg-blue-950 px-2.5 py-1.5 rounded-xl border border-blue-800 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px]">sort</span>
+                    Mais Recentes Primeiro
+                  </span>
                   <select
                     value={modeFilter}
                     onChange={(e) => setModeFilter(e.target.value)}
