@@ -78,31 +78,32 @@ export function MessageInput({
       className="relative group w-full"
       onSubmit={(e) => { e.preventDefault(); handleSend(); }}
     >
-      {/* Pill container */}
-      <div className="
+      {/* Pill container — clicar em qualquer lugar foca no campo de texto */}
+      <div
+        onClick={() => textareaRef.current?.focus()}
+        className="
         flex items-center gap-2
         rounded-[2rem] p-1 md:p-2 pl-4 md:pl-6
         shadow-[0_10px_20px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_20px_rgba(0,0,0,0.4)]
         focus-within:shadow-[0_0_20px_rgba(21,115,194,0.3)]
-        transition-all
+        transition-all cursor-text
         tutor-gradient-border
         [--tutor-border-bg:#1573C2]
         dark:[--tutor-border-bg:#0D3A6E]
       ">
-        {/* Input / Textarea */}
+        {/* Input / Textarea — NUNCA DESABILITADO */}
         <textarea
           ref={textareaRef}
           rows={1}
           value={value}
           onChange={(e) => { setValue(e.target.value); handleInput(); }}
           onKeyDown={handleKeyDown}
-          disabled={disabled}
           placeholder={placeholder}
           className="
             w-full bg-transparent border-none focus:outline-none
             text-white placeholder-white/70 dark:placeholder-white/50
             font-medium text-sm sm:text-base
-            py-2 md:py-3 resize-none disabled:opacity-50
+            py-2 md:py-3 resize-none
           "
           style={{ maxHeight: '144px' }}
           autoComplete="off"

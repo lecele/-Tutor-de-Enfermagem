@@ -156,7 +156,6 @@ export default function HomePage() {
               onSend={sendMessage}
               onNewSession={startNewSession}
               isLoading={isLoading}
-              disabled={isBackendOnline === false}
             />
           </footer>
         </div>
