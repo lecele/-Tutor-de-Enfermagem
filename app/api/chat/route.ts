@@ -569,7 +569,7 @@ export async function POST(req: NextRequest) {
 
     // ── Rota rápida: saudação/menu inicial → zero tokens de LLM ──────────────
     if (intent === 'greeting') {
-      saveMessages(session_id, question, GREETING_RESPONSE);
+      await saveMessages(session_id, question, GREETING_RESPONSE);
       return NextResponse.json({
         answer: GREETING_RESPONSE,
         sources_found: 0,
@@ -581,7 +581,7 @@ export async function POST(req: NextRequest) {
 
     // ── Rota rápida: retorno ao menu → zero tokens de LLM ────────────────────
     if (intent === 'menu_return') {
-      saveMessages(session_id, question, MENU_RETURN_RESPONSE);
+      await saveMessages(session_id, question, MENU_RETURN_RESPONSE);
       return NextResponse.json({
         answer: MENU_RETURN_RESPONSE,
         sources_found: 0,
@@ -593,7 +593,7 @@ export async function POST(req: NextRequest) {
 
     // ── Rota rápida: encerrar sessão → zero tokens de LLM ───────────────────
     if (intent === 'farewell') {
-      saveMessages(session_id, question, FAREWELL_RESPONSE);
+      await saveMessages(session_id, question, FAREWELL_RESPONSE);
       return NextResponse.json({
         answer: FAREWELL_RESPONSE,
         sources_found: 0,
@@ -629,7 +629,7 @@ export async function POST(req: NextRequest) {
 
     // ── Rota rápida: informações da disciplina ───────────────────────────────
     if (intent === 'menu_info') {
-      saveMessages(session_id, question, INFO_MENU_RESPONSE);
+      await saveMessages(session_id, question, INFO_MENU_RESPONSE);
       return NextResponse.json({
         answer: INFO_MENU_RESPONSE,
         sources_found: 0,
