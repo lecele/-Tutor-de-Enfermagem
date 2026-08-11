@@ -167,8 +167,8 @@ export default function AdminDashboardPage() {
       <aside className="w-64 shrink-0 bg-[#040e1f] border-r border-blue-900/40 flex flex-col p-4 gap-6 select-none z-20">
         {/* Logo Branding */}
         <div className="flex items-center gap-3.5 pb-4 border-b border-blue-900/40 pt-1">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1573C2]/20 to-blue-950/40 p-1 border border-blue-500/30 flex items-center justify-center shrink-0 shadow-lg">
-            <img src="/logo.png" alt="Logo Tutor de Enfermagem" className="w-full h-full object-contain tutor-logo-premium drop-shadow-md" />
+          <div className="w-16 h-16 shrink-0 flex items-center justify-center">
+            <img src="/logo.png" alt="Logo Tutor de Enfermagem" className="w-full h-full object-contain tutor-logo-premium drop-shadow-xl" />
           </div>
           <div className="flex flex-col">
             <strong className="text-base font-extrabold text-white tracking-wide leading-tight">InterAtiva Analytics</strong>
