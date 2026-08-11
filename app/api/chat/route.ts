@@ -432,14 +432,17 @@ async function generateResponse(
   if (sessionMode === 'simulado_tema') {
     modeInstruction = `[MODO ATIVO: SIMULADO DE PROVA — GERAR QUESTÃO 1]
 VOCÊ ESTÁ GERANDO UM SIMULADO DE PROVA (OPÇÃO 2) SOBRE O TEMA "${themeToUse}".
-NUNCA GERE RESUMO DE CONTEÚDO. NUNCA USE OS TÍTULOS **Explicação:** OU **Exemplo clínico:**.
+NUNCA GERE RESUMO DE CONTEÚDO. NUNCA USE OS TÍTULOS **Explicação:** OU **Exemplo clínico:**. NUNCA INCLUA REFERÊNCIAS EM QUESTÕES DE QUIZ.
 
-GERAR OBRIGATORIAMENTE A QUESTÃO 1 NO SEGUINTE FORMATO EXATO:
+GERAR OBRIGATORIAMENTE A QUESTÃO 1 NO SEGUINTE FORMATO EXATO (CADA ALTERNATIVA EM SUA PRÓPRIA LINHA SEPARADA, UMA EMBAIXO DA OUTRA — PROIBIDO LINHA ÚNICA):
 **Questão 1:** [Enunciado claro e contextualizado da primeira questão sobre ${themeToUse}]
 
 **A)** [Texto da alternativa A]
+
 **B)** [Texto da alternativa B]
+
 **C)** [Texto da alternativa C]
+
 **D)** [Texto da alternativa D]
 
 Por favor, responda com a letra da alternativa correta (A, B, C ou D).`;
@@ -450,12 +453,12 @@ Por favor, responda com a letra da alternativa correta (A, B, C ou D).`;
 VOCÊ ESTÁ AVALIANDO A 1ª TENTATIVA DO ESTUDANTE NA QUESTÃO DO QUIZ/SIMULADO SOBRE "${themeToUse || 'o tema em estudo'}".
 O ESTUDANTE DIGITOU COMO RESPOSTA: "${question}".
 
-ESTA SOLICITAÇÃO É A RESPOSTA DE UMA QUESTÃO DO QUIZ DA DISCIPLINA INT 5224. ELA ESTÁ 100% DENTRO DO ESCOPO DA DISCIPLINA. JAMAIS RECUSE OU USE O TEXTO DE RECUSA PADRÃO.
+ESTA SOLICITAÇÃO É A RESPOSTA DE UMA QUESTÃO DO QUIZ DA DISCIPLINA INT 5224. ELA ESTÁ 100% DENTRO DO ESCOPO DA DISCIPLINA. JAMAIS RECUSE OU USE O TEXTO DE RECUSA PADRÃO. NUNCA INCLUA BLOCO DE REFERÊNCIAS.
 
 INSTRUÇÕES OBRIGATÓRIAS DE RESPOSTA:
 1. Se a resposta "${question}" estiver CORRETA:
    - Confirme brevemente a resposta correta (1-2 frases).
-   - Apresente a **Questão 2:** sobre o tema "${themeToUse}" com as alternativas **A)**, **B)**, **C)** e **D)** em negrito e linhas separadas.
+   - Apresente a **Questão 2:** sobre o tema "${themeToUse}" com as alternativas **A)**, **B)**, **C)** e **D)** em negrito e cada uma em sua própria linha separada (uma embaixo da outra).
 2. Se a resposta "${question}" estiver INCORRETA:
    - Responda EXATAMENTE: "Sua resposta está incorreta. Tente novamente! Qual das alternativas você escolheria agora?"
    - NÃO revele a alternativa correta ainda. NÃO avance para a próxima questão ainda.`;
@@ -466,14 +469,14 @@ INSTRUÇÕES OBRIGATÓRIAS DE RESPOSTA:
 VOCÊ ESTÁ AVALIANDO A 2ª TENTATIVA DO ESTUDANTE NA MESMA QUESTÃO DO QUIZ/SIMULADO SOBRE "${themeToUse || 'o tema em estudo'}".
 O ESTUDANTE DIGITOU COMO SEGUNDA RESPOSTA: "${question}".
 
-ESTA SOLICITAÇÃO É A SEGUNDA TENTATIVA DE UMA QUESTÃO DO QUIZ DA DISCIPLINA INT 5224. ELA ESTÁ 100% DENTRO DO ESCOPO DA DISCIPLINA. JAMAIS RECUSE OU USE O TEXTO DE RECUSA PADRÃO.
+ESTA SOLICITAÇÃO É A SEGUNDA TENTATIVA DE UMA QUESTÃO DO QUIZ DA DISCIPLINA INT 5224. ELA ESTÁ 100% DENTRO DO ESCOPO DA DISCIPLINA. JAMAIS RECUSE OU USE O TEXTO DE RECUSA PADRÃO. NUNCA INCLUA BLOCO DE REFERÊNCIAS.
 
 INSTRUÇÕES OBRIGATÓRIAS DE RESPOSTA:
 1. Se a resposta "${question}" estiver CORRETA:
-   - Confirme a resposta correta (1 frase) e apresente a **Questão 2:** sobre "${themeToUse}" com as alternativas **A)**, **B)**, **C)** e **D)** em negrito e linhas separadas.
+   - Confirme a resposta correta (1 frase) e apresente a **Questão 2:** sobre "${themeToUse}" com as alternativas **A)**, **B)**, **C)** e **D)** em negrito e cada uma em sua própria linha separada (uma embaixo da outra).
 2. Se a resposta "${question}" estiver INCORRETA pela 2ª vez:
    - Revele a resposta correta: "A alternativa correta é a **X)**. [explicação super breve em 1-2 frases]"
-   - Apresente em seguida a **Questão 2:** sobre "${themeToUse}" com as alternativas **A)**, **B)**, **C)** e **D)** em negrito e linhas separadas.`;
+   - Apresente em seguida a **Questão 2:** sobre "${themeToUse}" com as alternativas **A)**, **B)**, **C)** e **D)** em negrito e cada uma em sua própria linha separada (uma embaixo da outra).`;
     promptSuffix = `Resposta do estudante (2ª tentativa no Quiz de ${themeToUse}): ${question}`;
 
   } else if (sessionMode === 'resumo_aprofundar') {

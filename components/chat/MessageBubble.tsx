@@ -125,6 +125,15 @@ function AgentBubble({ content, sourcesFound, hasContext }: {
   sourcesFound?: number;
   hasContext?: boolean;
 }) {
+  // Garante que opções A), B), C), D) fiquem em linhas separadas (uma embaixo da outra)
+  const formattedContent = useMemo(() => {
+    let text = content;
+    text = text.replace(/(\*\*?[A-D]\)\*\*?.*?)\s+(\*\*?[B-D]\)\*\*?)/g, '$1\n\n$2');
+    text = text.replace(/(\*\*?[A-D]\)\*\*?.*?)\s+(\*\*?[B-D]\)\*\*?)/g, '$1\n\n$2');
+    text = text.replace(/(\*\*?[A-D]\)\*\*?.*?)\s+(\*\*?[B-D]\)\*\*?)/g, '$1\n\n$2');
+    return text;
+  }, [content]);
+
   // Detecta se a mensagem contém opções interativas para o usuário escolher
   const isOptionMessage = useMemo(() => {
     const lower = content.toLowerCase();
@@ -238,7 +247,7 @@ function AgentBubble({ content, sourcesFound, hasContext }: {
         prose-blockquote:border-l-[#1573C2] prose-blockquote:bg-blue-50 dark:prose-blockquote:bg-blue-950/20 prose-blockquote:px-4 prose-blockquote:py-1 prose-blockquote:rounded-r-lg
       ">
         <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-          {content}
+          {formattedContent}
         </ReactMarkdown>
       </div>
 
