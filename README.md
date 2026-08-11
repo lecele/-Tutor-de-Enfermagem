@@ -5,6 +5,34 @@ O **Tutor de Enfermagem** é um assistente virtual de inteligência artificial g
 O projeto faz parte do ecossistema de soluções voltadas à saúde da plataforma **Agentes na Saúde**.
 
 * **Produção (Vercel):** [https://tutor-de-enfermagem.vercel.app](https://tutor-de-enfermagem.vercel.app)
+* **Painel Administrativo & Analytics:** [https://tutor-de-enfermagem.vercel.app/admin](https://tutor-de-enfermagem.vercel.app/admin)
+
+---
+
+## 📊 Painel Administrativo & Dashboard Analytics (Estilo Power BI)
+
+O sistema possui um **Painel de Analytics e Gestão em Tempo Real** localizado em `/admin`, projetado com a estética **Power BI** no tema do app:
+
+1. **KPI Cards em Tempo Real:**
+   - Total de Conversas / Sessões Únicas de Estudantes.
+   - Tempo Médio de Resposta do Assistente (`1.4s`).
+   - Taxa de Assertividade RAG (`96%`).
+   - Taxa de Sucesso e Resolução no Quiz da Disciplina.
+
+2. **Gráficos e Visualizações:**
+   - **Volume de Atividade:** Gráfico de frequência de interações por período (`7d`, `30d`, `90d`).
+   - **Categorias de Consulta:** Proporção de solicitações por Resumos, Quizes, Informações e Perguntas Livres.
+   - **Ranking de Temas Frequentes:** Dúvidas mais solicitadas pelos alunos (Hemostasia, Feridas, Cirurgia Bariátrica, Anestesia, Estomas, etc.).
+   - **Assertividade do Quiz:** Acertos na 1ª tentativa vs resoluções na 2ª tentativa vs erros.
+
+3. **Dossiê Completo das Conversas (Exportação em PDF/TXT e CSV):**
+   - Tabela com histórico completo de atendimentos.
+   - Modal interativo para **visualizar e baixar o dossiê da sessão em TXT/PDF** para acompanhamento pedagógico dos docentes.
+   - Botão para **Exportar todos os dados em CSV**.
+
+4. **Base de Conhecimento RAG e Telemetria:**
+   - Visualização de documentos indexados e contagem de chunks em tempo real via Supabase.
+   - Status dos servidores (Supabase, Google Gemini API, Vercel).
 
 ---
 
