@@ -77,7 +77,7 @@ function SparklineWave({ color = '#38bdf8' }: { color?: string }) {
   );
 }
 
-// ── COMPONENTE DE GRÁFICO DE LINHA DINÂMICO (VOLUME DE ATIVIDADE) ──────────────
+// ── COMPONENTE DE GRÁFICO DE LINHA DINÂMICO INTERATIVO COM TOOLTIP NO HOVER ─────
 function ActivityChart({
   timeline = [],
   timeRange = '7d',
@@ -85,7 +85,7 @@ function ActivityChart({
   timeline: Array<{ date: string; count: number }>;
   timeRange: '7d' | '30d' | '90d';
 }) {
-  const pointsCount = timeRange === '7d' ? 7 : timeRange === '30d' ? 14 : 20;
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   const dataset = useMemo(() => {
     const map = new Map<string, number>();
@@ -96,34 +96,44 @@ function ActivityChart({
     }
 
     const now = new Date();
-    const result: Array<{ dateLabel: string; count: number }> = [];
-    const daysToBack = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
-    const step = Math.max(1, Math.floor(daysToBack / pointsCount));
+    const result: Array<{ isoDate: string; dateLabel: string; count: number }> = [];
+    const daysCount = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
 
-    for (let i = pointsCount - 1; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * step * 24 * 60 * 60 * 1000);
+    for (let i = daysCount - 1; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
       const isoDate = d.toISOString().substring(0, 10);
       const dayStr = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
       const count = map.get(isoDate) ?? (i === 1 ? 4 : i === 2 ? 8 : i === 3 ? 3 : 1);
-      result.push({ dateLabel: dayStr, count });
+      result.push({ isoDate, dateLabel: dayStr, count });
     }
 
     return result;
-  }, [timeline, timeRange, pointsCount]);
+  }, [timeline, timeRange]);
 
-  const maxVal = Math.max(...dataset.map((d) => d.count), 5);
-  const width = 500;
-  const height = 140;
-  const padding = 25;
+  const maxVal = Math.max(...dataset.map((d) => d.count), 25);
+  const ySteps = [
+    Math.round(maxVal),
+    Math.round(maxVal * 0.8),
+    Math.round(maxVal * 0.6),
+    Math.round(maxVal * 0.4),
+    Math.round(maxVal * 0.2),
+    0,
+  ];
+
+  const width = 600;
+  const height = 180;
+  const paddingX = 35;
+  const paddingTop = 20;
+  const paddingBottom = 30;
 
   const coords = dataset.map((d, i) => {
-    const x = padding + (i / Math.max(dataset.length - 1, 1)) * (width - 2 * padding);
-    const y = height - padding - (d.count / maxVal) * (height - 2 * padding);
-    return { x, y, count: d.count, dateLabel: d.dateLabel };
+    const x = paddingX + (i / Math.max(dataset.length - 1, 1)) * (width - 2 * paddingX);
+    const y =
+      height -
+      paddingBottom -
+      (d.count / (maxVal || 1)) * (height - paddingTop - paddingBottom);
+    return { x, y, count: d.count, dateLabel: d.dateLabel, isoDate: d.isoDate };
   });
-
-  const peakIdx = coords.reduce((maxI, curr, i, arr) => (curr.count > arr[maxI].count ? i : maxI), 0);
-  const peakPoint = coords[peakIdx];
 
   let pathD = `M ${coords[0].x},${coords[0].y}`;
   for (let i = 0; i < coords.length - 1; i++) {
@@ -136,55 +146,119 @@ function ActivityChart({
     pathD += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${next.x},${next.y}`;
   }
 
-  const areaD = `${pathD} L ${coords[coords.length - 1].x},${height} L ${coords[0].x},${height} Z`;
+  const areaD = `${pathD} L ${coords[coords.length - 1].x},${height - paddingBottom} L ${coords[0].x},${height - paddingBottom} Z`;
 
   return (
-    <div className="w-full relative">
-      <div className="h-48 w-full relative pt-2">
-        <svg className="w-full h-full overflow-visible" viewBox={`0 0 ${width} ${height + 20}`} preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="activityGradDynamic" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#1573C2" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#1573C2" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-
-          {/* Grid lines */}
-          <line x1="0" y1="20" x2={width} y2="20" stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
-          <line x1="0" y1="60" x2={width} y2="60" stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
-          <line x1="0" y1="100" x2={width} y2="100" stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
-
-          {/* Gradient Area Fill */}
-          <path d={areaD} fill="url(#activityGradDynamic)" />
-
-          {/* Smooth Line */}
-          <path d={pathD} fill="none" stroke="#38bdf8" strokeWidth="3.5" strokeLinecap="round" />
-
-          {/* Clean Data Dots (No pulsating animate-ping!) */}
-          {coords.map((pt, idx) => (
-            <g key={idx}>
-              <circle
-                cx={pt.x}
-                cy={pt.y}
-                r={idx === peakIdx ? '5' : '3.5'}
-                fill={idx === peakIdx ? '#ffffff' : '#38bdf8'}
-                stroke={idx === peakIdx ? '#1573C2' : '#0b203c'}
-                strokeWidth={idx === peakIdx ? '3' : '2'}
-              />
-            </g>
+    <div className="w-full relative flex flex-col select-none">
+      <div className="flex w-full h-56 relative pt-2">
+        {/* Escala do Eixo Y (Números na Esquerda) */}
+        <div className="w-8 shrink-0 flex flex-col justify-between text-[10px] font-mono text-slate-500 pb-7 pr-1 text-right">
+          {ySteps.map((val, idx) => (
+            <span key={idx}>{val}</span>
           ))}
-        </svg>
+        </div>
 
-        {/* X Axis Labels */}
-        <div className="flex justify-between text-[10px] text-slate-400 mt-2 font-mono">
-          {coords
-            .filter((_, idx) => idx % Math.ceil(coords.length / 6) === 0 || idx === coords.length - 1)
-            .map((pt, idx) => (
-              <span key={idx} className="truncate px-0.5">
-                {pt.dateLabel}
-                {pt.count === peakPoint.count && pt.count > 0 ? ' (Pico)' : ''}
-              </span>
-            ))}
+        {/* Container do Gráfico SVG */}
+        <div className="flex-1 h-full relative">
+          <svg
+            className="w-full h-full overflow-visible"
+            viewBox={`0 0 ${width} ${height}`}
+            preserveAspectRatio="none"
+          >
+            <defs>
+              <linearGradient id="activityGradDynamic" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#1573C2" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#1573C2" stopOpacity="0.02" />
+              </linearGradient>
+            </defs>
+
+            {/* Linhas de Grade Horizontais */}
+            {ySteps.map((_, idx) => {
+              const lineY =
+                paddingTop + (idx / (ySteps.length - 1)) * (height - paddingTop - paddingBottom);
+              return (
+                <line
+                  key={idx}
+                  x1="0"
+                  y1={lineY}
+                  x2={width}
+                  y2={lineY}
+                  stroke="rgba(255,255,255,0.06)"
+                  strokeDasharray="4 4"
+                />
+              );
+            })}
+
+            {/* Preenchimento de Área com Gradiente */}
+            <path d={areaD} fill="url(#activityGradDynamic)" />
+
+            {/* Linha Curva Principal */}
+            <path d={pathD} fill="none" stroke="#38bdf8" strokeWidth="3" strokeLinecap="round" />
+
+            {/* Pontos Interativos em TODAS as Datas */}
+            {coords.map((pt, idx) => {
+              const isHovered = hoveredIdx === idx;
+              return (
+                <g
+                  key={idx}
+                  className="cursor-pointer transition-all"
+                  onMouseEnter={() => setHoveredIdx(idx)}
+                  onMouseLeave={() => setHoveredIdx(null)}
+                >
+                  {/* Área invisível maior para facilitar o hover */}
+                  <circle cx={pt.x} cy={pt.y} r="12" fill="transparent" />
+
+                  {/* Anel de brilho ao passar o mouse */}
+                  {isHovered && (
+                    <circle cx={pt.x} cy={pt.y} r="8" fill="rgba(56,189,248,0.25)" stroke="#38bdf8" strokeWidth="1.5" />
+                  )}
+
+                  {/* Círculo do ponto de dados */}
+                  <circle
+                    cx={pt.x}
+                    cy={pt.y}
+                    r={isHovered ? '5' : '3'}
+                    fill={isHovered ? '#ffffff' : '#38bdf8'}
+                    stroke={isHovered ? '#1573C2' : '#0b203c'}
+                    strokeWidth={isHovered ? '2.5' : '1.5'}
+                  />
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* Card Flutuante de Tooltip no Hover (Igualzinho ao InterAtiva!) */}
+          {hoveredIdx !== null && coords[hoveredIdx] && (
+            <div
+              className="absolute z-30 bg-[#04142b]/95 border border-[#38bdf8]/50 rounded-xl px-3 py-2 shadow-2xl backdrop-blur-md pointer-events-none transition-all transform -translate-x-1/2 -translate-y-full"
+              style={{
+                left: `${(coords[hoveredIdx].x / width) * 100}%`,
+                top: `${(coords[hoveredIdx].y / height) * 100 - 12}px`,
+              }}
+            >
+              <div className="text-[11px] font-bold text-white border-b border-blue-900/60 pb-1 mb-1 font-mono">
+                {coords[hoveredIdx].dateLabel}
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-cyan-300">
+                <span className="w-2.5 h-2.5 bg-[#38bdf8] rounded-xs inline-block" />
+                {coords[hoveredIdx].count} {coords[hoveredIdx].count === 1 ? 'interação' : 'interações'}
+              </div>
+            </div>
+          )}
+
+          {/* Eixo X com Rótulos de Datas */}
+          <div className="flex justify-between text-[10px] text-slate-400 mt-1 font-mono px-2 select-none">
+            {coords
+              .filter((_, idx) => {
+                const step = timeRange === '7d' ? 1 : timeRange === '30d' ? 4 : 10;
+                return idx % step === 0 || idx === coords.length - 1;
+              })
+              .map((pt, idx) => (
+                <span key={idx} className="truncate">
+                  {pt.dateLabel}
+                </span>
+              ))}
+          </div>
         </div>
       </div>
     </div>
@@ -632,7 +706,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Linha 1: Volume de Atividade (Gráfico Dinâmico) + Donut de Categorias */}
+              {/* Linha 1: Volume de Atividade (Gráfico Interativo) + Donut de Categorias */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Volume de Atividade */}
                 <div className="lg:col-span-2 bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
@@ -658,7 +732,7 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  {/* Componente Dinâmico do Gráfico de Linha sem Animação Pulsante */}
+                  {/* Componente Interativo do Gráfico com Tooltip no Hover e Eixo Y */}
                   <ActivityChart timeline={stats?.timeline || []} timeRange={timeRange} />
                 </div>
 
