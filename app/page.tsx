@@ -207,6 +207,10 @@ function WelcomeMenu({ onSelect }: { onSelect: (text: string) => void }) {
           Este espaço foi pensado para facilitar sua jornada de aprendizagem sobre o cuidado no processo de viver humano em condição cirúrgica. Aqui você revisa conteúdos, pratica com simulados e acessa informações essenciais da disciplina.
         </p>
 
+        <div className="w-full text-[11px] md:text-xs text-blue-900/90 dark:text-blue-200/90 bg-blue-50/80 dark:bg-blue-900/30 p-2.5 rounded-xl border border-blue-200/50 dark:border-blue-700/40 my-0.5">
+          <p><strong>Nota de transparência:</strong> Este assistente utiliza inteligência artificial para apoiar seu estudo. Ele não substitui o raciocínio clínico, a leitura das aulas ou a orientação docente. Todas as respostas seguem o plano de ensino e os limites éticos da disciplina.</p>
+        </div>
+
         <div className="w-full text-[11px] md:text-xs text-gray-600 dark:text-blue-200/80 space-y-1 pt-1 border-t border-gray-100 dark:border-blue-900/40">
           <p><strong>Como usar:</strong> Fale comigo como se estivesse conversando com um tutor. Peça explicações, tire dúvidas ou escolha uma das opções abaixo.</p>
           <p><strong>O que esperar:</strong> Clareza, objetividade e apoio contínuo — sempre dentro dos limites da disciplina.</p>

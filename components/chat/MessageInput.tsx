@@ -96,7 +96,7 @@ export function MessageInput({
           value={value}
           onChange={(e) => { setValue(e.target.value); handleInput(); }}
           onKeyDown={handleKeyDown}
-          disabled={isLoading || disabled}
+          disabled={disabled}
           placeholder={placeholder}
           className="
             w-full bg-transparent border-none focus:outline-none
