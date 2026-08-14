@@ -3,7 +3,6 @@
 // app/page.tsx — Layout principal sem voz e sem sidebar
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useChat } from '@/hooks/useChat';
 import { MessageInput } from '@/components/chat/MessageInput';
 import { MessageBubble } from '@/components/chat/MessageBubble';
@@ -96,27 +95,8 @@ export default function HomePage() {
                 </h1>
               </div>
 
-              {/* Botões do Topo (Painel Admin & Tema) */}
+              {/* Botão de Alternar Tema */}
               <div className="flex items-center gap-2">
-                <Link
-                  href="/admin"
-                  className="
-                    text-white/90 hover:text-white
-                    flex items-center gap-1.5
-                    px-2.5 py-1 md:px-3 md:py-1.5
-                    rounded-full text-xs font-semibold
-                    bg-white/10 hover:bg-white/20
-                    transition-all active:scale-95
-                    cursor-pointer shrink-0
-                  "
-                  title="Painel Administrativo & Analytics"
-                >
-                  <span className="material-symbols-outlined text-[16px] md:text-[18px]">
-                    analytics
-                  </span>
-                  <span className="hidden sm:inline">Painel</span>
-                </Link>
-
                 <button
                   onClick={toggleTheme}
                   className="
