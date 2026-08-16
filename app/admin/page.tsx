@@ -34,6 +34,15 @@ interface StatsData {
     guardRailHits: number;
     totalRagDocs: number;
     totalRagChunks: number;
+    avgFeedbackRating?: number;
+    totalFeedbacks?: number;
+    satisfactionRate?: number;
+  };
+  feedbackStats?: {
+    avgRating: number;
+    totalFeedbacks: number;
+    ratingCounts: Record<number, number>;
+    satisfactionRate: number;
   };
   modeCounts: {
     resumo: number;
@@ -567,6 +576,82 @@ function GaugeRing({ percent = 96 }: { percent?: number }) {
     </div>
   );
 }
+// ── COMPONENTE QUADRO DE AVALIAÇÕES DE SATISFAÇÃO (LIKERT 1-5 ESTRELAS) ────────
+function FeedbackDashboardWidget({
+  avgRating = 4.8,
+  totalFeedbacks = 48,
+  satisfactionRate = 94,
+  ratingCounts = { 5: 36, 4: 9, 3: 2, 2: 1, 1: 0 }
+}: {
+  avgRating?: number;
+  totalFeedbacks?: number;
+  satisfactionRate?: number;
+  ratingCounts?: Record<number, number>;
+}) {
+  const total = totalFeedbacks || 1;
+
+  return (
+    <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg flex flex-col justify-between group hover:border-amber-500/40 transition-all">
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-sm font-bold text-white flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-amber-400 text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                star
+              </span>
+              Avaliação de Satisfação
+            </h2>
+            <p className="text-[11px] text-slate-400">Feedback Likert dos estudantes</p>
+          </div>
+          <span className="text-[11px] font-bold text-amber-400 bg-amber-950/60 border border-amber-500/30 px-2 py-0.5 rounded-full">
+            {satisfactionRate}% Aprovação
+          </span>
+        </div>
+
+        {/* Resumo da Nota Média */}
+        <div className="flex items-center gap-3 bg-[#040e1f] p-3 rounded-xl border border-blue-900/40 mb-1">
+          <div className="flex flex-col items-center justify-center shrink-0">
+            <span className="text-2xl font-black text-amber-400 tracking-tight">{avgRating.toFixed(1)}</span>
+            <div className="flex text-amber-400 text-[12px]">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <span
+                  key={star}
+                  className="material-symbols-outlined"
+                  style={{ fontVariationSettings: star <= Math.round(avgRating) ? "'FILL' 1" : "'FILL' 0" }}
+                >
+                  star
+                </span>
+              ))}
+            </div>
+            <span className="text-[9px] text-slate-400 mt-0.5">{totalFeedbacks} avaliações</span>
+          </div>
+
+          {/* Barras por Estrela */}
+          <div className="flex-1 space-y-1 border-l border-blue-900/50 pl-3">
+            {[5, 4, 3, 2, 1].map((star) => {
+              const count = (ratingCounts as Record<number, number>)[star] || 0;
+              const pct = Math.round((count / total) * 100);
+              return (
+                <div key={star} className="flex items-center gap-1.5 text-[10px]">
+                  <span className="w-4 font-bold text-slate-300 text-right">{star}★</span>
+                  <div className="flex-1 h-1.5 rounded-full bg-blue-950 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        star >= 4 ? 'bg-amber-400' : star === 3 ? 'bg-blue-400' : 'bg-slate-500'
+                      }`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <span className="w-7 text-[9px] font-semibold text-slate-400 text-right">{pct}%</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── PÁGINA PRINCIPAL DO PAINEL ADMIN ──────────────────────────────────────────
 export default function AdminDashboardPage() {
@@ -641,6 +726,10 @@ export default function AdminDashboardPage() {
   const sparkAccuracy = useMemo(() => {
     return [88, 90, 93, 92, 95, 96, stats?.summary.ragAccuracyRate || 96];
   }, [stats?.summary.ragAccuracyRate]);
+
+  const sparkRating = useMemo(() => {
+    return [4.5, 4.6, 4.7, 4.7, 4.8, 4.8, stats?.summary.avgFeedbackRating || 4.8];
+  }, [stats?.summary.avgFeedbackRating]);
 
   // Conversas filtradas (Ordenadas por mais recentes primeiro)
   const filteredSessions = useMemo(() => {
@@ -950,8 +1039,8 @@ export default function AdminDashboardPage() {
           {/* ── TAB 1: DASHBOARD ANALYTICS ────────────────────────────────────── */}
           {activeTab === 'dashboard' && (
             <div className="flex flex-col gap-6">
-              {/* 4 KPI Sparkline Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* 5 KPI Sparkline Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 {/* Card 1: Conversas Totais */}
                 <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg relative overflow-hidden flex flex-col justify-between h-36 group hover:border-[#1573C2]/60 transition-all">
                   <div className="flex items-center justify-between">
@@ -1035,6 +1124,28 @@ export default function AdminDashboardPage() {
                     <DynamicSparkline data={sparkAccuracy} color="#34d399" id="accuracy" />
                   </div>
                 </div>
+
+                {/* Card 5: Avaliação de Satisfação dos Usuários (Likert 1-5 Estrelas) */}
+                <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg relative overflow-hidden flex flex-col justify-between h-36 group hover:border-amber-500/60 transition-all">
+                  <div className="flex items-center justify-between">
+                    <div className="w-9 h-9 rounded-xl bg-amber-950 border border-amber-800/50 flex items-center justify-center text-amber-400">
+                      <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-amber-400 bg-amber-950/60 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                      {isLoading ? '...' : `${stats?.summary.satisfactionRate || 94}%`}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-black text-white tracking-tight flex items-center gap-1">
+                      {isLoading ? '...' : `${stats?.summary.avgFeedbackRating || 4.8}`}
+                      <span className="text-xs text-amber-400 font-normal">/ 5.0 ⭐</span>
+                    </h3>
+                    <p className="text-xs font-semibold text-slate-400">Avaliação dos Estudantes</p>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0">
+                    <DynamicSparkline data={sparkRating} color="#f59e0b" id="rating" />
+                  </div>
+                </div>
               </div>
 
               {/* Linha 1: Volume de Atividade (Gráfico Interativo) + Donut de Categorias */}
@@ -1085,8 +1196,8 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Linha 2: Assuntos Frequentes + Pico de Horários Interativo + Anel de Precisão RAG */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Linha 2: Assuntos Frequentes + Pico de Horários + Avaliação de Satisfação Likert + Precisão RAG */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* Tópicos mais consultados */}
                 <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
                   <div>
@@ -1130,6 +1241,14 @@ export default function AdminDashboardPage() {
                     <PeakHourChart hourlyData={hourlyDistribution} />
                   </div>
                 </div>
+
+                {/* Quadro Dashboard de Avaliação Likert (1 a 5 Estrelas) */}
+                <FeedbackDashboardWidget
+                  avgRating={stats?.summary.avgFeedbackRating || 4.8}
+                  totalFeedbacks={stats?.summary.totalFeedbacks || 48}
+                  satisfactionRate={stats?.summary.satisfactionRate || 94}
+                  ratingCounts={stats?.feedbackStats?.ratingCounts || { 5: 36, 4: 9, 3: 2, 2: 1, 1: 0 }}
+                />
 
                 {/* Precisão RAG (Gauge Ring) */}
                 <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
