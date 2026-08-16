@@ -415,7 +415,7 @@ async function generateResponse(
   const systemPrompt = buildSystemPrompt(formatContext(docs), formatHistory(history));
 
   const model = getGenAI().getGenerativeModel({
-    model: 'gemini-3.6-flash',
+    model: 'gemini-3.7-flash',
     systemInstruction: systemPrompt,
     generationConfig: {
       temperature: 0.2,

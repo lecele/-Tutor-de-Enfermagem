@@ -1262,7 +1262,7 @@ export default function AdminDashboardPage() {
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-3 rounded-xl bg-[#040e1f] border border-blue-900/40">
-                    <span className="font-semibold text-slate-200">Google Gemini LLM API (gemini-3.6-flash)</span>
+                    <span className="font-semibold text-slate-200">Google Gemini LLM API (gemini-3.7-flash)</span>
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                       🟢 Operacional
                     </span>
