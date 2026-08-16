@@ -21,6 +21,8 @@ interface SessionData {
   messageCount: number;
   detectedTheme: string;
   messages: SessionMessage[];
+  avgRating?: number | null;
+  ratingCount?: number;
 }
 
 interface StatsData {
@@ -1317,12 +1319,13 @@ export default function AdminDashboardPage() {
                   <table className="w-full text-left text-xs">
                     <thead className="bg-[#040e1f] text-slate-400 uppercase font-semibold border-b border-blue-900/40">
                       <tr>
-                        <th className="py-3.5 px-4 w-20">#</th>
+                        <th className="py-3.5 px-4 w-16">#</th>
                         <th className="py-3.5 px-4">Estudante / Sessão</th>
                         <th className="py-3.5 px-4">Primeira Mensagem</th>
                         <th className="py-3.5 px-4">Tema Detectado</th>
                         <th className="py-3.5 px-4">Última Atividade</th>
                         <th className="py-3.5 px-4 text-center">Interações</th>
+                        <th className="py-3.5 px-4 text-center">Média Avaliação</th>
                         <th className="py-3.5 px-4 text-right">Ação</th>
                       </tr>
                     </thead>
@@ -1350,6 +1353,16 @@ export default function AdminDashboardPage() {
                             <td className="py-3.5 px-4 text-center font-bold text-white">
                               {session.messageCount}
                             </td>
+                            <td className="py-3.5 px-4 text-center font-bold">
+                              {session.avgRating ? (
+                                <span className="inline-flex items-center gap-1 text-amber-400 font-bold bg-amber-950/60 border border-amber-500/40 px-2.5 py-0.5 rounded-full text-xs">
+                                  <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                                  {session.avgRating.toFixed(1)}
+                                </span>
+                              ) : (
+                                <span className="text-slate-500 italic text-[11px]">—</span>
+                              )}
+                            </td>
                             <td className="py-3.5 px-4 text-right">
                               <button
                                 onClick={() => setSelectedSession(session)}
@@ -1362,7 +1375,7 @@ export default function AdminDashboardPage() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={7} className="py-8 text-center text-slate-500 italic">
+                          <td colSpan={8} className="py-8 text-center text-slate-500 italic">
                             Nenhuma conversa encontrada com os filtros selecionados.
                           </td>
                         </tr>
@@ -1433,8 +1446,16 @@ export default function AdminDashboardPage() {
                 <h3 className="text-sm font-bold text-white">
                   Dossiê da Sessão #{selectedSession.sessionId.substring(0, 8)}
                 </h3>
-                <p className="text-[11px] text-slate-400">
-                  Tema: <span className="text-blue-400 font-semibold">{selectedSession.detectedTheme}</span> · Total de {selectedSession.messageCount} interações
+                <p className="text-[11px] text-slate-400 flex items-center gap-2 flex-wrap mt-0.5">
+                  <span>Tema: <span className="text-blue-400 font-semibold">{selectedSession.detectedTheme}</span> · Total de {selectedSession.messageCount} interações</span>
+                  {selectedSession.avgRating ? (
+                    <span className="inline-flex items-center gap-1 text-amber-400 font-bold bg-amber-950/80 border border-amber-500/40 px-2 py-0.5 rounded-full text-[10px]">
+                      <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                      Avaliação: {selectedSession.avgRating.toFixed(1)}
+                    </span>
+                  ) : (
+                    <span className="text-slate-500 italic text-[10px]">· Sem avaliação</span>
+                  )}
                 </p>
               </div>
               <div className="flex items-center gap-2">

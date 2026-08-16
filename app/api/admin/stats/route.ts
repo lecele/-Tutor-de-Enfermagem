@@ -272,15 +272,36 @@ export async function GET() {
       : 92;
 
     // 3. Busca avaliações por estrelas (feedback_ratings)
-    let feedbackRatings: Array<{ rating: number; created_at: string }> = [];
+    let feedbackRatings: Array<{ session_id?: string; rating: number; created_at: string }> = [];
     try {
       const { data: fb } = await (supabase.from('feedback_ratings') as any)
-        .select('rating, created_at')
+        .select('session_id, rating, created_at')
         .order('created_at', { ascending: false });
       feedbackRatings = fb || [];
     } catch (e) {
       console.warn('[admin/stats] feedback fetch error:', e);
     }
+
+    const sessionRatingMap = new Map<string, number[]>();
+    feedbackRatings.forEach((f) => {
+      if (f.session_id) {
+        const arr = sessionRatingMap.get(f.session_id) || [];
+        arr.push(f.rating);
+        sessionRatingMap.set(f.session_id, arr);
+      }
+    });
+
+    sessionMap.forEach((sess, id) => {
+      const ratings = sessionRatingMap.get(id);
+      if (ratings && ratings.length > 0) {
+        const avg = (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1);
+        (sess as any).avgRating = Number(avg);
+        (sess as any).ratingCount = ratings.length;
+      } else {
+        (sess as any).avgRating = null;
+        (sess as any).ratingCount = 0;
+      }
+    });
 
     const ratingCounts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
     if (feedbackRatings.length > 0) {
