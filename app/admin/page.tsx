@@ -578,17 +578,17 @@ function GaugeRing({ percent = 96 }: { percent?: number }) {
 }
 // ── COMPONENTE QUADRO DE AVALIAÇÕES DE SATISFAÇÃO (LIKERT 1-5 ESTRELAS) ────────
 function FeedbackDashboardWidget({
-  avgRating = 4.8,
-  totalFeedbacks = 48,
-  satisfactionRate = 94,
-  ratingCounts = { 5: 36, 4: 9, 3: 2, 2: 1, 1: 0 }
+  avgRating = 0,
+  totalFeedbacks = 0,
+  satisfactionRate = 0,
+  ratingCounts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
 }: {
   avgRating?: number;
   totalFeedbacks?: number;
   satisfactionRate?: number;
   ratingCounts?: Record<number, number>;
 }) {
-  const total = totalFeedbacks || 1;
+  const total = totalFeedbacks || 0;
 
   return (
     <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl shadow-lg flex flex-col justify-between group hover:border-amber-500/40 transition-all">
@@ -604,33 +604,35 @@ function FeedbackDashboardWidget({
             <p className="text-[11px] text-slate-400">Feedback Likert dos estudantes</p>
           </div>
           <span className="text-[11px] font-bold text-amber-400 bg-amber-950/60 border border-amber-500/30 px-2 py-0.5 rounded-full">
-            {satisfactionRate}% Aprovação
+            {totalFeedbacks === 0 ? 'Sem avaliações' : `${satisfactionRate}% Aprovação`}
           </span>
         </div>
 
         {/* Resumo da Nota Média */}
         <div className="flex items-center gap-3 bg-[#040e1f] p-3 rounded-xl border border-blue-900/40 mb-1">
           <div className="flex flex-col items-center justify-center shrink-0">
-            <span className="text-2xl font-black text-amber-400 tracking-tight">{avgRating.toFixed(1)}</span>
+            <span className="text-2xl font-black text-amber-400 tracking-tight">
+              {totalFeedbacks === 0 ? '0.0' : avgRating.toFixed(1)}
+            </span>
             <div className="flex text-amber-400 text-[12px]">
               {[1, 2, 3, 4, 5].map((star) => (
                 <span
                   key={star}
                   className="material-symbols-outlined"
-                  style={{ fontVariationSettings: star <= Math.round(avgRating) ? "'FILL' 1" : "'FILL' 0" }}
+                  style={{ fontVariationSettings: totalFeedbacks > 0 && star <= Math.round(avgRating) ? "'FILL' 1" : "'FILL' 0" }}
                 >
                   star
                 </span>
               ))}
             </div>
-            <span className="text-[9px] text-slate-400 mt-0.5">{totalFeedbacks} avaliações</span>
+            <span className="text-[9px] text-slate-400 mt-0.5">{totalFeedbacks} {totalFeedbacks === 1 ? 'avaliação' : 'avaliações'}</span>
           </div>
 
           {/* Barras por Estrela */}
           <div className="flex-1 space-y-1 border-l border-blue-900/50 pl-3">
             {[5, 4, 3, 2, 1].map((star) => {
               const count = (ratingCounts as Record<number, number>)[star] || 0;
-              const pct = Math.round((count / total) * 100);
+              const pct = total > 0 ? Math.round((count / total) * 100) : 0;
               return (
                 <div key={star} className="flex items-center gap-1.5 text-[10px]">
                   <span className="w-4 font-bold text-slate-300 text-right">{star}★</span>
@@ -728,7 +730,9 @@ export default function AdminDashboardPage() {
   }, [stats?.summary.ragAccuracyRate]);
 
   const sparkRating = useMemo(() => {
-    return [4.5, 4.6, 4.7, 4.7, 4.8, 4.8, stats?.summary.avgFeedbackRating || 4.8];
+    const val = stats?.summary.avgFeedbackRating || 0;
+    if (val === 0) return [0, 0, 0, 0, 0, 0, 0];
+    return [val, val, val, val, val, val, val];
   }, [stats?.summary.avgFeedbackRating]);
 
   // Conversas filtradas (Ordenadas por mais recentes primeiro)
@@ -1132,15 +1136,17 @@ export default function AdminDashboardPage() {
                       <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
                     </div>
                     <span className="text-[11px] font-bold text-amber-400 bg-amber-950/60 border border-amber-500/30 px-2 py-0.5 rounded-full">
-                      {isLoading ? '...' : `${stats?.summary.satisfactionRate || 94}%`}
+                      {isLoading ? '...' : (stats?.summary.totalFeedbacks || 0) === 0 ? '0%' : `${stats?.summary.satisfactionRate}%`}
                     </span>
                   </div>
                   <div>
                     <h3 className="text-2xl font-black text-white tracking-tight flex items-center gap-1">
-                      {isLoading ? '...' : `${stats?.summary.avgFeedbackRating || 4.8}`}
+                      {isLoading ? '...' : (stats?.summary.totalFeedbacks || 0) === 0 ? '0.0' : `${stats?.summary.avgFeedbackRating}`}
                       <span className="text-xs text-amber-400 font-normal">/ 5.0 ⭐</span>
                     </h3>
-                    <p className="text-xs font-semibold text-slate-400">Avaliação dos Estudantes</p>
+                    <p className="text-xs font-semibold text-slate-400">
+                      {(stats?.summary.totalFeedbacks || 0) === 0 ? 'Sem avaliações ainda' : `${stats?.summary.totalFeedbacks} avaliações`}
+                    </p>
                   </div>
                   <div className="absolute bottom-0 left-0 right-0">
                     <DynamicSparkline data={sparkRating} color="#f59e0b" id="rating" />

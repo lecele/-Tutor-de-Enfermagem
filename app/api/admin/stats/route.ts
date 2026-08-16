@@ -289,23 +289,14 @@ export async function GET() {
           ratingCounts[f.rating as 1|2|3|4|5]++;
         }
       });
-    } else {
-      ratingCounts[5] = 36;
-      ratingCounts[4] = 9;
-      ratingCounts[3] = 2;
-      ratingCounts[2] = 1;
-      ratingCounts[1] = 0;
     }
 
-    const totalFeedbacks = feedbackRatings.length > 0
-      ? feedbackRatings.length
-      : Object.values(ratingCounts).reduce((a, b) => a + b, 0);
-
+    const totalFeedbacks = feedbackRatings.length;
     const sumRatings = Object.entries(ratingCounts).reduce((sum, [star, count]) => sum + (Number(star) * count), 0);
-    const avgRating = totalFeedbacks > 0 ? (sumRatings / totalFeedbacks).toFixed(1) : '4.8';
+    const avgRating = totalFeedbacks > 0 ? (sumRatings / totalFeedbacks).toFixed(1) : '0.0';
     const satisfactionRate = totalFeedbacks > 0
       ? Math.round(((ratingCounts[5] + ratingCounts[4]) / totalFeedbacks) * 100)
-      : 94;
+      : 0;
 
     return NextResponse.json({
       summary: {
