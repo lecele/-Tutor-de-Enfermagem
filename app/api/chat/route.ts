@@ -419,7 +419,7 @@ async function generateResponse(
     systemInstruction: systemPrompt,
     generationConfig: {
       temperature: 0.2,
-      maxOutputTokens: 2048,
+      maxOutputTokens: 4096,
     },
   });
 
@@ -514,9 +514,27 @@ Ao final: "Deseja aprofundar este tema, escolher outro tema, voltar ao menu prin
     ? `${modeInstruction}\n\n${promptSuffix}`
     : `Estudante: ${question}`;
 
-  const result = await model.generateContent(prompt);
+  let text = '';
+  try {
+    const result = await model.generateContent(prompt);
+    text = result.response.text();
 
-  return result.response.text();
+    // Verificação de integridade e completude da resposta
+    if ((sessionMode === 'resumo' || sessionMode === 'resumo_aprofundar') && !text.includes('Deseja aprofundar')) {
+      const continuationPrompt = `A resposta anterior foi interrompida antes de concluir. Por favor, continue EXATAMENTE de onde parou e inclua a pergunta final ("Deseja aprofundar este tema, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"): \n\n${text}`;
+      const contResult = await model.generateContent(continuationPrompt);
+      const contText = contResult.response.text();
+      text = text + '\n\n' + contText;
+    }
+  } catch (err) {
+    console.error('[generateResponse error]', err);
+    if (!text) {
+      text = 'Ocorreu uma interrupção na geração da resposta. Vou continuar de onde parei.\n\n' +
+        'Por favor, refaça a seleção da opção no menu abaixo para prosseguir com seu estudo.';
+    }
+  }
+
+  return text;
 }
 
 // ── Histórico e Cache de Estado ───────────────────────────────────────────────

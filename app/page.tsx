@@ -119,8 +119,8 @@ export default function HomePage() {
           </div>
 
           {/* ── Mensagens / Menu Inicial ────────────────────────────────────────────── */}
-          <section className={`flex-1 ${isEmpty ? 'overflow-y-auto md:overflow-hidden flex flex-col justify-center py-1 md:py-2' : 'overflow-y-auto py-2 md:py-4'} px-2 md:px-6 scroll-smooth z-10 relative`}>
-            <div className={`relative z-10 w-full flex flex-col ${isEmpty ? 'h-full justify-center' : 'gap-4'}`}>
+          <section className={`flex-1 ${isEmpty ? 'overflow-y-auto flex flex-col justify-start pt-1 md:pt-2 pb-2' : 'overflow-y-auto py-2 md:py-4'} px-2 md:px-6 scroll-smooth z-10 relative`}>
+            <div className={`relative z-10 w-full flex flex-col ${isEmpty ? 'h-full justify-start pt-1' : 'gap-4'}`}>
               {isEmpty ? (
                 <WelcomeMenu onSelect={sendMessage} />
               ) : (
@@ -192,15 +192,12 @@ function WelcomeMenu({ onSelect }: { onSelect: (text: string) => void }) {
   ];
 
   return (
-    <div className="flex flex-col items-center justify-center text-center px-1 my-auto relative z-10 w-full gap-2 sm:gap-3">
-      {/* Ícone e texto da Seção 7.1 do Prompt 10Aug2026 */}
-      <div className="flex flex-col items-center gap-1.5 sm:gap-2 max-w-xl text-left bg-white/70 dark:bg-blue-950/40 p-3 sm:p-4 rounded-2xl border border-blue-200/60 dark:border-blue-800/40 shadow-sm backdrop-blur-sm">
-        <div className="flex items-center gap-2 w-full border-b border-blue-100 dark:border-blue-900/60 pb-1.5">
-          <span className="material-symbols-outlined text-[24px] sm:text-[28px] text-[#1573C2] dark:text-blue-400 shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>
-            medical_information
-          </span>
-          <h2 className="text-xs sm:text-sm font-bold text-[#1573C2] dark:text-blue-200 leading-snug">
-            Assistente de Estudos da INT 5224 – O cuidado no processo de viver humano II: a condição cirúrgica
+    <div className="flex flex-col items-center justify-start text-center px-1 my-0 relative z-10 w-full gap-2 sm:gap-3 pt-1">
+      {/* Texto do Quadro de Introdução (Requisitos de 14 de Agosto) */}
+      <div className="flex flex-col items-center gap-1.5 sm:gap-2 max-w-xl text-center bg-white/70 dark:bg-blue-950/40 p-3 sm:p-4 rounded-2xl border border-blue-200/60 dark:border-blue-800/40 shadow-sm backdrop-blur-sm">
+        <div className="w-full border-b border-blue-100 dark:border-blue-900/60 pb-1.5 text-center">
+          <h2 className="text-xs sm:text-sm font-bold text-[#1573C2] dark:text-blue-200 leading-snug text-center">
+            Assistente de Inteligência Artificial para INT 5224 – O cuidado no processo de viver humano II: a condição cirúrgica
           </h2>
         </div>
         

@@ -2,7 +2,7 @@
 
 // components/chat/MessageBubble.tsx — Balões com suporte a opções de menu clicáveis
 
-import { useMemo, useEffect, useRef, type ReactNode } from 'react';
+import { useMemo, useEffect, useRef, useState, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -254,6 +254,62 @@ function AgentBubble({ content, sourcesFound, hasContext }: {
       {sourcesFound !== undefined && hasContext !== undefined && (
         <SourceBadges sourcesFound={sourcesFound} hasContext={hasContext} />
       )}
+
+      {/* Componente de Avaliação Likert (1 a 5 Estrelas) — Solicitado em 14 de Agosto */}
+      <StarFeedbackRating />
+    </div>
+  );
+}
+
+// ── Avaliação por Estrelas (Likert 1-5) ──────────────────────────────────────
+function StarFeedbackRating() {
+  const [rating, setRating] = useState<number | null>(null);
+  const [hoverRating, setHoverRating] = useState<number | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleRate = async (stars: number) => {
+    setRating(stars);
+    setSubmitted(true);
+    try {
+      await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating: stars }),
+      });
+    } catch (e) {
+      console.warn('Feedback submit error:', e);
+    }
+  };
+
+  return (
+    <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between flex-wrap gap-2 text-xs">
+      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+        {submitted ? 'Obrigado pela sua avaliação! ⭐' : 'Avalie a resposta:'}
+      </span>
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((star) => {
+          const active = (hoverRating || rating || 0) >= star;
+          return (
+            <button
+              key={star}
+              type="button"
+              disabled={submitted}
+              onClick={() => handleRate(star)}
+              onMouseEnter={() => !submitted && setHoverRating(star)}
+              onMouseLeave={() => !submitted && setHoverRating(null)}
+              className="p-0.5 text-amber-400 hover:scale-125 transition-transform disabled:cursor-default"
+              title={`${star} estrela${star > 1 ? 's' : ''} (${star === 1 ? 'ruim' : star === 5 ? 'excelente' : ''})`}
+            >
+              <span
+                className="material-symbols-outlined text-[18px]"
+                style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
+              >
+                star
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
