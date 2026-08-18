@@ -233,6 +233,51 @@ function AgentBubble({ content, sourcesFound, hasContext }: {
     },
   }), [isOptionMessage]);
 
+  // Condição para exibição do Feedback Likert (Estrelas):
+  // Exibir APENAS no resultado do resumo, final do simulado e final das informações da disciplina
+  const shouldShowFeedback = useMemo(() => {
+    if (!content) return false;
+    const lower = content.toLowerCase();
+
+    // Bloqueia em erros, interrupções ou menus intermediários
+    if (
+      lower.includes('ocorreu uma interrupção') ||
+      lower.includes('erro') ||
+      lower.includes('qual tema você deseja') ||
+      lower.includes('qual tema da disciplina você deseja') ||
+      lower.includes('tente novamente! qual das alternativas') ||
+      lower.includes('ola! sou o assistente de inteligência artificial educacional') ||
+      lower.includes('este espaço foi pensado para facilitar')
+    ) {
+      return false;
+    }
+
+    // 1. Resumo de Conteúdo / Aprofundamento
+    const isResumo =
+      lower.includes('**explicação:**') ||
+      lower.includes('**explicação aprofundada:**') ||
+      lower.includes('**exemplo clínico:**') ||
+      lower.includes('deseja aprofundar este tema') ||
+      lower.includes('deseja aprofundar mais');
+
+    // 2. Final do Simulado / Quiz (resolução da questão ou encerramento)
+    const isSimuladoFinal =
+      lower.includes('parabéns, você acertou') ||
+      lower.includes('você acertou') ||
+      lower.includes('a alternativa correta é a') ||
+      lower.includes('deseja continuar o simulado') ||
+      lower.includes('deseja fazer outro simulado');
+
+    // 3. Informações da Disciplina (resposta final informativa)
+    const isInfo =
+      lower.includes('informações da disciplina') ||
+      lower.includes('plano de ensino') ||
+      lower.includes('deseja fazer outra pergunta sobre a disciplina') ||
+      lower.includes('informações sobre o cronograma');
+
+    return isResumo || isSimuladoFinal || isInfo;
+  }, [content]);
+
   return (
     <div className="rounded-2xl rounded-bl-none border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0d1e35] px-5 py-4 shadow-sm">
       <div className="
@@ -255,8 +300,8 @@ function AgentBubble({ content, sourcesFound, hasContext }: {
         <SourceBadges sourcesFound={sourcesFound} hasContext={hasContext} />
       )}
 
-      {/* Componente de Avaliação Likert (1 a 5 Estrelas) — Solicitado em 14 de Agosto */}
-      <StarFeedbackRating />
+      {/* Componente de Avaliação Likert (1 a 5 Estrelas) — Exibido apenas em Resumos, Final de Quiz e Informações */}
+      {shouldShowFeedback && <StarFeedbackRating />}
     </div>
   );
 }

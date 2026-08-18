@@ -414,14 +414,12 @@ async function generateResponse(
 ): Promise<string> {
   const systemPrompt = buildSystemPrompt(formatContext(docs), formatHistory(history));
 
-  const model = getGenAI().getGenerativeModel({
-    model: 'gemini-3.7-flash',
-    systemInstruction: systemPrompt,
-    generationConfig: {
-      temperature: 0.2,
-      maxOutputTokens: 4096,
-    },
-  });
+  const candidateModels = [
+    'gemini-3.7-flash',
+    'gemini-3.6-flash',
+    'gemini-3.5-flash',
+    'gemini-flash-latest'
+  ];
 
   const themeToUse = inlineTheme || question;
 
@@ -515,26 +513,42 @@ Ao final: "Deseja aprofundar este tema, escolher outro tema, voltar ao menu prin
     : `Estudante: ${question}`;
 
   let text = '';
-  try {
-    const result = await model.generateContent(prompt);
-    text = result.response.text();
+  let lastErr: any = null;
 
-    // Verificação de integridade e completude da resposta
-    if ((sessionMode === 'resumo' || sessionMode === 'resumo_aprofundar') && !text.includes('Deseja aprofundar')) {
-      const continuationPrompt = `A resposta anterior foi interrompida antes de concluir. Por favor, continue EXATAMENTE de onde parou e inclua a pergunta final ("Deseja aprofundar este tema, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"): \n\n${text}`;
-      const contResult = await model.generateContent(continuationPrompt);
-      const contText = contResult.response.text();
-      text = text + '\n\n' + contText;
-    }
-  } catch (err) {
-    console.error('[generateResponse error]', err);
-    if (!text) {
-      text = 'Ocorreu uma interrupção na geração da resposta. Vou continuar de onde parei.\n\n' +
-        'Por favor, refaça a seleção da opção no menu abaixo para prosseguir com seu estudo.';
+  for (const modelName of candidateModels) {
+    try {
+      const model = getGenAI().getGenerativeModel({
+        model: modelName,
+        systemInstruction: systemPrompt,
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 4096,
+        },
+      });
+
+      const result = await model.generateContent(prompt);
+      text = result.response.text();
+
+      // Verificação de integridade e completude da resposta
+      if ((sessionMode === 'resumo' || sessionMode === 'resumo_aprofundar') && !text.includes('Deseja aprofundar')) {
+        const continuationPrompt = `A resposta anterior foi interrompida antes de concluir. Por favor, continue EXATAMENTE de onde parou e inclua a pergunta final ("Deseja aprofundar este tema, escolher outro tema, voltar ao menu principal ou encerrar a sessão?"): \n\n${text}`;
+        const contResult = await model.generateContent(continuationPrompt);
+        const contText = contResult.response.text();
+        text = text + '\n\n' + contText;
+      }
+
+      if (text && text.trim().length > 0) {
+        return text;
+      }
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[generateResponse] Model ${modelName} failed, attempting fallback:`, err);
     }
   }
 
-  return text;
+  console.error('[generateResponse all candidate models failed]', lastErr);
+  return 'Ocorreu uma interrupção na geração da resposta. Vou continuar de onde parei.\n\n' +
+    'Por favor, refaça a seleção da opção no menu abaixo para prosseguir com seu estudo.';
 }
 
 // ── Histórico e Cache de Estado ───────────────────────────────────────────────
@@ -730,36 +744,36 @@ export async function POST(req: NextRequest) {
       .trim();
 
     // 0. Detecção de Atalho / Tema Inline na mensagem do estudante
-    // A. Simulado com tema inline (ex: "Simulado sobre Hemostasia", "Simulado de Suturas", "2 - Feridas", "Quero um simulado sobre Estomas")
-    const simuladoInlineMatch = questionNorm.match(/^(?:quero\s+(?:um\s+)?)?(?:fazer\s+)?(?:simulado(?: de prova)?|opcao 2|2)\s*(?:sobre|de|da|do|com|-|:)?\s*(.+)$/i);
+    // A. Simulado / Quiz com tema inline (ex: "Simulado sobre Hemostasia", "queria um quiz sobre dor pos cirurgica", "Quiz sobre Feridas", "2 - Feridas")
+    const simuladoInlineMatch = questionNorm.match(/^(?:quero\s+(?:um\s+)?|queria\s+(?:um\s+)?)?(?:fazer\s+)?(?:simulado(?: de prova)?|quiz(?: da disciplina)?|opcao 2|2)\s*(?:sobre|de|da|do|com|-|:)?\s*(.+)$/i);
     if (simuladoInlineMatch) {
       const topicCandidate = simuladoInlineMatch[1].trim();
-      if (topicCandidate.length > 0 && !/^(de prova|prova)$/i.test(topicCandidate)) {
+      if (topicCandidate.length > 0 && !/^(de prova|prova|da disciplina|disciplina)$/i.test(topicCandidate)) {
         sessionMode = 'simulado_tema';
-        inlineTheme = question.replace(/^(?:quero\s+(?:um\s+)?)?(?:fazer\s+)?(?:simulado(?: de prova)?|opcao 2|2)\s*(?:sobre|de|da|do|com|-|:)?\s*/i, '').trim();
+        inlineTheme = question.replace(/^(?:quero\s+(?:um\s+)?|queria\s+(?:um\s+)?)?(?:fazer\s+)?(?:simulado(?: de prova)?|quiz(?: da disciplina)?|opcao 2|2)\s*(?:sobre|de|da|do|com|-|:)?\s*/i, '').trim();
       }
     }
 
-    // B. Resumo com tema inline (ex: "Resumo sobre Feridas", "Resumo de Suturas", "1 - Hemostasia", "Quero um resumo sobre Dor")
+    // B. Resumo com tema inline (ex: "Resumo sobre Feridas", "queria um resumo sobre hemostasia", "1 - Hemostasia")
     if (sessionMode === 'livre') {
-      const resumoInlineMatch = questionNorm.match(/^(?:quero\s+(?:um\s+)?)?(?:fazer\s+)?(?:resumo(?: de conteudo)?|opcao 1|1)\s*(?:sobre|de|da|do|com|-|:)?\s*(.+)$/i);
+      const resumoInlineMatch = questionNorm.match(/^(?:quero\s+(?:um\s+)?|queria\s+(?:um\s+)?)?(?:fazer\s+)?(?:resumo(?: de conteudo)?|opcao 1|1)\s*(?:sobre|de|da|do|com|-|:)?\s*(.+)$/i);
       if (resumoInlineMatch) {
         const topicCandidate = resumoInlineMatch[1].trim();
         if (topicCandidate.length > 0 && !/^(de conteudo|conteudo)$/i.test(topicCandidate)) {
           sessionMode = 'resumo';
-          inlineTheme = question.replace(/^(?:quero\s+(?:um\s+)?)?(?:fazer\s+)?(?:resumo(?: de conteudo)?|opcao 1|1)\s*(?:sobre|de|da|do|com|-|:)?\s*/i, '').trim();
+          inlineTheme = question.replace(/^(?:quero\s+(?:um\s+)?|queria\s+(?:um\s+)?)?(?:fazer\s+)?(?:resumo(?: de conteudo)?|opcao 1|1)\s*(?:sobre|de|da|do|com|-|:)?\s*/i, '').trim();
         }
       }
     }
 
     // C. Informações com tema/pergunta inline (ex: "Informações sobre avaliações", "3 - professores")
     if (sessionMode === 'livre') {
-      const infoInlineMatch = questionNorm.match(/^(?:quero\s+(?:saber\s+)?)?(?:informacoes|informacao|opcao 3|3)\s*(?:sobre|de|da|do|com|-|:)?\s*(.+)$/i);
+      const infoInlineMatch = questionNorm.match(/^(?:quero\s+(?:saber\s+)?|queria\s+(?:saber\s+)?)?(?:informacoes|informacao|opcao 3|3)\s*(?:sobre|de|da|do|com|-|:)?\s*(.+)$/i);
       if (infoInlineMatch) {
         const queryCandidate = infoInlineMatch[1].trim();
         if (queryCandidate.length > 0 && !/^(da disciplina|disciplina)$/i.test(queryCandidate)) {
           sessionMode = 'info';
-          inlineTheme = question.replace(/^(?:quero\s+(?:saber\s+)?)?(?:informacoes|informacao|opcao 3|3)\s*(?:sobre|de|da|do|com|-|:)?\s*/i, '').trim();
+          inlineTheme = question.replace(/^(?:quero\s+(?:saber\s+)?|queria\s+(?:saber\s+)?)?(?:informacoes|informacao|opcao 3|3)\s*(?:sobre|de|da|do|com|-|:)?\s*/i, '').trim();
         }
       }
     }
