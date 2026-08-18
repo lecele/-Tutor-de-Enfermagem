@@ -12,6 +12,7 @@ import { SourceBadges } from './SourceBadges';
 interface MessageBubbleProps {
   message: Message;
   index: number;
+  sessionId?: string;
 }
 
 // ── Dispatch de seleção de opção ─────────────────────────────────────────────
@@ -31,7 +32,7 @@ function extractText(node: ReactNode): string {
   return '';
 }
 
-export function MessageBubble({ message, index }: MessageBubbleProps) {
+export function MessageBubble({ message, index, sessionId }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const bubbleRef = useRef<HTMLDivElement>(null);
 
@@ -70,6 +71,7 @@ export function MessageBubble({ message, index }: MessageBubbleProps) {
             content={message.content}
             sourcesFound={message.sources_found}
             hasContext={message.has_context}
+            sessionId={sessionId}
           />
         )}
 
@@ -120,10 +122,11 @@ function UserBubble({ content }: { content: string }) {
 // Qualquer outro item de lista (conteúdo, referências, exemplos) renderiza como <li> normal
 const MENU_BUTTON_RE = /^(resumo de conteúdo|resumo|quiz da disciplina|quiz|simulado de prova|simulado|informações da disciplina|informações|encerrar sessão|encerrar|aprofundar|aprofundar este tema|aprofundar mais|escolher outro tema|outro tema|voltar ao menu principal|voltar ao menu|menu principal|continuar o simulado|continuar simulado|continuar o quiz|continuar quiz|fazer outra pergunta|outra pergunta|repetir a pergunta)$/i;
 
-function AgentBubble({ content, sourcesFound, hasContext }: {
+function AgentBubble({ content, sourcesFound, hasContext, sessionId }: {
   content: string;
   sourcesFound?: number;
   hasContext?: boolean;
+  sessionId?: string;
 }) {
   // Garante que opções A), B), C), D) fiquem em linhas separadas (uma embaixo da outra)
   const formattedContent = useMemo(() => {
@@ -301,13 +304,13 @@ function AgentBubble({ content, sourcesFound, hasContext }: {
       )}
 
       {/* Componente de Avaliação Likert (1 a 5 Estrelas) — Exibido apenas em Resumos, Final de Quiz e Informações */}
-      {shouldShowFeedback && <StarFeedbackRating />}
+      {shouldShowFeedback && <StarFeedbackRating sessionId={sessionId} />}
     </div>
   );
 }
 
 // ── Avaliação por Estrelas (Likert 1-5) ──────────────────────────────────────
-function StarFeedbackRating() {
+function StarFeedbackRating({ sessionId }: { sessionId?: string }) {
   const [rating, setRating] = useState<number | null>(null);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -319,7 +322,10 @@ function StarFeedbackRating() {
       await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating: stars }),
+        body: JSON.stringify({
+          session_id: sessionId || 'anonymous',
+          rating: stars,
+        }),
       });
     } catch (e) {
       console.warn('Feedback submit error:', e);

@@ -126,7 +126,7 @@ export default function HomePage() {
               ) : (
                 <>
                   {messages.map((msg, i) => (
-                    <MessageBubble key={msg.id} message={msg} index={i} />
+                    <MessageBubble key={msg.id} message={msg} index={i} sessionId={session.id} />
                   ))}
                   <AnimatePresence>
                     {isLoading && <TypingIndicator key="typing" />}
