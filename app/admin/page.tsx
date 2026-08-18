@@ -1038,7 +1038,6 @@ export default function AdminDashboardPage() {
           </div>
           <div className="flex flex-col">
             <strong className="text-lg font-black text-white tracking-wide leading-tight">Tutor Analytics</strong>
-            <span className="text-[11px] font-bold tracking-wider text-blue-400 uppercase">Tutor INT 5224</span>
           </div>
         </div>
 
