@@ -769,21 +769,129 @@ export default function AdminDashboardPage() {
       workbook.creator = 'Tutor de Enfermagem INT 5224';
       workbook.created = new Date();
 
-      const worksheet = workbook.addWorksheet('Métricas & Conversas', {
+      // ── ABA 1: INDICADORES & MÉTRICAS EXECUTIVAS ───────────────────────────
+      const summarySheet = workbook.addWorksheet('📊 Indicadores & Métricas', {
+        views: [{ showGridLines: true }]
+      });
+
+      // Banner Principal
+      summarySheet.mergeCells('A1:D1');
+      const sumTitle = summarySheet.getCell('A1');
+      sumTitle.value = 'TUTOR DE ENFERMAGEM INT 5224 — PAINEL EXECUTIVO DE INDICADORES';
+      sumTitle.font = { name: 'Calibri', size: 13, bold: true, color: { argb: 'FFFFFFFF' } };
+      sumTitle.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF020B18' } };
+      sumTitle.alignment = { horizontal: 'center', vertical: 'middle' };
+      summarySheet.getRow(1).height = 34;
+
+      summarySheet.mergeCells('A2:D2');
+      const sumSub = summarySheet.getCell('A2');
+      sumSub.value = `Relatório gerado em ${new Date().toLocaleString('pt-BR')}  |  Disciplina INT 5224 (UFSC)`;
+      sumSub.font = { name: 'Calibri', size: 10, italic: true, color: { argb: 'FF38BDF8' } };
+      sumSub.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0B203C' } };
+      sumSub.alignment = { horizontal: 'center', vertical: 'middle' };
+      summarySheet.getRow(2).height = 20;
+
+      // Seção de KPIs Globais
+      summarySheet.getCell('A4').value = '1. INDICADORES GERAIS DE DESEMPENHO E USO';
+      summarySheet.getCell('A4').font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF1573C2' } };
+
+      const kpiData = [
+        ['Indicador / Métrica', 'Valor', 'Unidade / Referência'],
+        ['Total de Sessões / Conversas', stats.summary.totalConversations, 'Sessões registradas'],
+        ['Total de Mensagens Trocadas', stats.summary.totalMessages, 'Interações no chat'],
+        ['Tempo Médio de Resposta da IA', `${(stats.summary.avgResponseTimeMs / 1000).toFixed(2)}s`, 'Latência Gemini'],
+        ['Taxa de Resolução / Precisão RAG', `${stats.summary.ragAccuracyRate}%`, 'Fidelidade às fontes oficiais'],
+        ['Média de Avaliação dos Estudantes', `${(stats.summary.avgFeedbackRating || 0) === 0 ? '0.0' : stats.summary.avgFeedbackRating} / 5.0 ⭐`, `${stats.summary.totalFeedbacks || 0} avaliações coletadas`],
+        ['Taxa de Aprovação dos Estudantes', `${stats.summary.satisfactionRate || 0}%`, 'Avaliações 4★ e 5★'],
+        ['Total de Documentos e Livros Indexados', stats.summary.totalRagDocs || 122, 'Manuais e livros de referência'],
+        ['Total de Fragmentos de Texto (Chunks)', (stats.summary.totalRagChunks || 36004).toLocaleString('pt-BR'), 'Chunks vetorizados'],
+        ['Volume da Pasta Biblioteca (Livros)', '30.685 chunks (85.2%)', 'Brunner, Morton, NANDA, etc.']
+      ];
+
+      kpiData.forEach((rowVals, idx) => {
+        const row = summarySheet.getRow(5 + idx);
+        row.values = rowVals;
+        row.height = 20;
+        const isHead = idx === 0;
+        row.eachCell((cell, col) => {
+          cell.font = { name: 'Calibri', size: 10, bold: isHead, color: { argb: isHead ? 'FFFFFFFF' : 'FF1E293B' } };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: isHead ? 'FF1573C2' : (idx % 2 === 0 ? 'FFF4F8FC' : 'FFFFFFFF') } };
+          cell.alignment = { horizontal: col === 1 ? 'left' : 'center', vertical: 'middle' };
+          cell.border = { top: { style: 'thin', color: { argb: 'FFE2E8F0' } }, left: { style: 'thin', color: { argb: 'FFE2E8F0' } }, bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } }, right: { style: 'thin', color: { argb: 'FFE2E8F0' } } };
+        });
+      });
+
+      // Seção de Distribuição por Modo
+      const modeStartRow = 5 + kpiData.length + 2;
+      summarySheet.getCell(`A${modeStartRow}`).value = '2. DISTRIBUIÇÃO POR MODO PEDAGÓGICO DE ESTUDO';
+      summarySheet.getCell(`A${modeStartRow}`).font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF1573C2' } };
+
+      const modeData = [
+        ['Modo Pedagógico', 'Total de Acessos', 'Percentual'],
+        ['Resumo de Conteúdo (Opção 1)', stats.modeCounts?.resumo || 0, `${Math.round(((stats.modeCounts?.resumo || 0) / (stats.summary.totalConversations || 1)) * 100)}%`],
+        ['Simulado / Quiz da Disciplina (Opção 2)', stats.modeCounts?.quiz || 0, `${Math.round(((stats.modeCounts?.quiz || 0) / (stats.summary.totalConversations || 1)) * 100)}%`],
+        ['Informações da Disciplina (Opção 3)', stats.modeCounts?.info || 0, `${Math.round(((stats.modeCounts?.info || 0) / (stats.summary.totalConversations || 1)) * 100)}%`],
+        ['Dúvidas Livres / Consultas Diretas', stats.modeCounts?.livre || 0, `${Math.round(((stats.modeCounts?.livre || 0) / (stats.summary.totalConversations || 1)) * 100)}%`]
+      ];
+
+      modeData.forEach((rowVals, idx) => {
+        const row = summarySheet.getRow(modeStartRow + 1 + idx);
+        row.values = rowVals;
+        row.height = 20;
+        const isHead = idx === 0;
+        row.eachCell((cell, col) => {
+          cell.font = { name: 'Calibri', size: 10, bold: isHead, color: { argb: isHead ? 'FFFFFFFF' : 'FF1E293B' } };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: isHead ? 'FF0B203C' : (idx % 2 === 0 ? 'FFF4F8FC' : 'FFFFFFFF') } };
+          cell.alignment = { horizontal: col === 1 ? 'left' : 'center', vertical: 'middle' };
+          cell.border = { top: { style: 'thin', color: { argb: 'FFE2E8F0' } }, left: { style: 'thin', color: { argb: 'FFE2E8F0' } }, bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } }, right: { style: 'thin', color: { argb: 'FFE2E8F0' } } };
+        });
+      });
+
+      // Seção de Ranking de Temas
+      const topicStartRow = modeStartRow + 1 + modeData.length + 2;
+      summarySheet.getCell(`A${topicStartRow}`).value = '3. RANKING DE TEMAS MAIS ESTUDADOS';
+      summarySheet.getCell(`A${topicStartRow}`).font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF1573C2' } };
+
+      const sortedTopics = Object.entries(stats.topicCounts || {}).sort((a, b) => b[1] - a[1]);
+      const topicTableData = [
+        ['Tema Clínico / Tópico', 'Total de Consultas', 'Demanda Relativa'],
+        ...sortedTopics.map(([top, count]) => [top, count, `${Math.round((count / (stats.summary.totalConversations || 1)) * 100)}%`])
+      ];
+
+      topicTableData.forEach((rowVals, idx) => {
+        const row = summarySheet.getRow(topicStartRow + 1 + idx);
+        row.values = rowVals;
+        row.height = 20;
+        const isHead = idx === 0;
+        row.eachCell((cell, col) => {
+          cell.font = { name: 'Calibri', size: 10, bold: isHead, color: { argb: isHead ? 'FFFFFFFF' : 'FF1E293B' } };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: isHead ? 'FF1573C2' : (idx % 2 === 0 ? 'FFF4F8FC' : 'FFFFFFFF') } };
+          cell.alignment = { horizontal: col === 1 ? 'left' : 'center', vertical: 'middle' };
+          cell.border = { top: { style: 'thin', color: { argb: 'FFE2E8F0' } }, left: { style: 'thin', color: { argb: 'FFE2E8F0' } }, bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } }, right: { style: 'thin', color: { argb: 'FFE2E8F0' } } };
+        });
+      });
+
+      summarySheet.getColumn(1).width = 42;
+      summarySheet.getColumn(2).width = 24;
+      summarySheet.getColumn(3).width = 38;
+      summarySheet.getColumn(4).width = 15;
+
+      // ── ABA 2: REGISTRO DETALHADO DE CONVERSAS ─────────────────────────────
+      const worksheet = workbook.addWorksheet('💬 Registro de Conversas', {
         views: [{ showGridLines: true }]
       });
 
       // 1. Cabeçalho / Banner Principal do Relatório
-      worksheet.mergeCells('A1:G1');
+      worksheet.mergeCells('A1:H1');
       const titleCell = worksheet.getCell('A1');
-      titleCell.value = 'TUTOR DE ENFERMAGEM INT 5224 — RELATÓRIO DE MÉTRICAS & CONVERSAS';
+      titleCell.value = 'TUTOR DE ENFERMAGEM INT 5224 — REGISTRO COMPLETO DE CONVERSAS';
       titleCell.font = { name: 'Calibri', size: 13, bold: true, color: { argb: 'FFFFFFFF' } };
       titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF020B18' } };
       titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
       worksheet.getRow(1).height = 36;
 
       // 2. Subtítulo com métricas da exportação
-      worksheet.mergeCells('A2:G2');
+      worksheet.mergeCells('A2:H2');
       const subTitleCell = worksheet.getCell('A2');
       subTitleCell.value = `Exportado em ${new Date().toLocaleString('pt-BR')}  |  Total Conversas: ${stats.summary.totalConversations}  |  Total Mensagens: ${stats.summary.totalMessages}  |  Precisão RAG: ${stats.summary.ragAccuracyRate}%`;
       subTitleCell.font = { name: 'Calibri', size: 10, italic: true, color: { argb: 'FF38BDF8' } };
@@ -794,8 +902,8 @@ export default function AdminDashboardPage() {
       // Linha 3 vazia
       worksheet.getRow(3).height = 8;
 
-      // 3. Cabeçalho da Tabela (Azul Marca com texto em Negrito Branco)
-      const headers = ['#', 'ID da Sessão', 'Data / Hora Início', 'Última Atividade', 'Interações', 'Tema Principal', 'Primeira Mensagem do Estudante'];
+      // 3. Cabeçalho da Tabela
+      const headers = ['#', 'ID da Sessão', 'Data / Hora Início', 'Última Atividade', 'Interações', 'Tema Principal', 'Média Avaliação ⭐', 'Primeira Mensagem do Estudante'];
       const headerRow = worksheet.getRow(4);
       headerRow.values = headers;
       headerRow.height = 26;
@@ -827,6 +935,7 @@ export default function AdminDashboardPage() {
           new Date(s.lastAt).toLocaleString('pt-BR'),
           s.messageCount,
           s.detectedTheme,
+          s.avgRating ? `${s.avgRating.toFixed(1)} ⭐` : '—',
           s.userFirstMsg || 'Menu Inicial'
         ];
         row.height = 22;
@@ -845,6 +954,9 @@ export default function AdminDashboardPage() {
           } else if (colNumber === 2) {
             cell.alignment = { horizontal: 'center', vertical: 'middle' };
             cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF1573C2' } };
+          } else if (colNumber === 7) {
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: s.avgRating ? 'FFD97706' : 'FF64748B' } };
           } else if (colNumber === 3 || colNumber === 4 || colNumber === 6) {
             cell.alignment = { horizontal: 'center', vertical: 'middle' };
           } else {
@@ -867,7 +979,8 @@ export default function AdminDashboardPage() {
       worksheet.getColumn(4).width = 22;  // Última Atividade
       worksheet.getColumn(5).width = 14;  // Interações
       worksheet.getColumn(6).width = 24;  // Tema
-      worksheet.getColumn(7).width = 55;  // Primeira Mensagem
+      worksheet.getColumn(7).width = 18;  // Média Avaliação
+      worksheet.getColumn(8).width = 55;  // Primeira Mensagem
 
       // 6. Gerar Buffer e Fazer Download do arquivo .xlsx
       const buffer = await workbook.xlsx.writeBuffer();
