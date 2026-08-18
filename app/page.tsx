@@ -14,6 +14,7 @@ export default function HomePage() {
     messages,
     isLoading,
     error,
+    session,
     messagesEndRef,
     sendMessage,
     startNewSession,
