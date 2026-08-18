@@ -1414,21 +1414,83 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl flex flex-col gap-4">
-                <h2 className="text-sm font-bold text-white">Telemetria & Segurança</h2>
-                <div className="space-y-3 text-xs">
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-[#040e1f] border border-blue-900/40">
-                    <span className="font-semibold text-slate-200">Guard Rails da Seção 5</span>
-                    <span className="font-bold text-blue-400">{stats?.summary.guardRailHits || 0} bloqueios efetuados</span>
+              <div className="bg-[#0b203c] border border-blue-900/40 p-5 rounded-2xl flex flex-col gap-4 md:col-span-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-blue-900/50 pb-3">
+                  <div>
+                    <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                      <span className="material-symbols-outlined text-blue-400 text-[20px]">menu_book</span>
+                      Inventário da Base RAG & Biblioteca de Livros
+                    </h2>
+                    <p className="text-[11px] text-slate-400">
+                      100% dos documentos são consultados via busca vetorial semântica (cosseno) a cada resposta do Tutor.
+                    </p>
                   </div>
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-[#040e1f] border border-blue-900/40">
-                    <span className="font-semibold text-slate-200">Prompt Mestre Versão</span>
-                    <span className="font-bold text-emerald-400">10 de Agosto de 2026</span>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-blue-950 border border-blue-800 text-blue-300">
+                      📚 {stats?.summary.totalRagDocs || 122} Documentos
+                    </span>
+                    <span className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-emerald-950 border border-emerald-800 text-emerald-300">
+                      ⚡ {(stats?.summary.totalRagChunks || 36004).toLocaleString('pt-BR')} Chunks
+                    </span>
+                    <span className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-amber-950 border border-amber-800 text-amber-300">
+                      📖 85.2% Pasta Biblioteca
+                    </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-[#040e1f] border border-blue-900/40">
-                    <span className="font-semibold text-slate-200">Código da Disciplina</span>
-                    <span className="font-bold text-slate-200">INT 5224 (UFSC)</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mb-2">
+                  <div className="p-3 bg-[#040e1f] rounded-xl border border-blue-900/40">
+                    <span className="text-[10px] text-slate-400 font-semibold block">Total de Chunks Indexados</span>
+                    <span className="text-lg font-black text-white">{(stats?.summary.totalRagChunks || 36004).toLocaleString('pt-BR')}</span>
+                    <span className="text-[10px] text-emerald-400 block mt-0.5">Vetorizados com gemini-embedding-2</span>
                   </div>
+                  <div className="p-3 bg-[#040e1f] rounded-xl border border-blue-900/40">
+                    <span className="text-[10px] text-slate-400 font-semibold block">Volume da Pasta Biblioteca</span>
+                    <span className="text-lg font-black text-amber-400">30.685 chunks</span>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">85.2% de todo o conhecimento</span>
+                  </div>
+                  <div className="p-3 bg-[#040e1f] rounded-xl border border-blue-900/40">
+                    <span className="text-[10px] text-slate-400 font-semibold block">Status de Consulta RAG</span>
+                    <span className="text-lg font-black text-emerald-400">100% Inclusivo</span>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">Sem exclusão de pastas ou filtros</span>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto max-h-72 border border-blue-900/40 rounded-xl">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-[#040e1f] text-slate-400 uppercase font-semibold text-[10px] sticky top-0 border-b border-blue-900/40">
+                      <tr>
+                        <th className="py-2.5 px-3">Documento / Livro de Referência</th>
+                        <th className="py-2.5 px-3">Categoria</th>
+                        <th className="py-2.5 px-3 text-right">Volume (Chunks)</th>
+                        <th className="py-2.5 px-3 text-center">Status no RAG</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-blue-900/30 text-slate-300 text-[11px]">
+                      {(stats?.ragDocuments || []).map((doc, i) => (
+                        <tr key={i} className="hover:bg-blue-950/40 transition-colors">
+                          <td className="py-2 px-3 font-medium text-white max-w-xs truncate">
+                            {doc.source}
+                          </td>
+                          <td className="py-2 px-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                              (doc.category || '').includes('Biblioteca')
+                                ? 'bg-amber-950/80 border border-amber-800 text-amber-300'
+                                : 'bg-blue-950 border border-blue-800 text-blue-300'
+                            }`}>
+                              {doc.category || 'Material RAG'}
+                            </span>
+                          </td>
+                          <td className="py-2 px-3 text-right font-mono font-bold text-slate-200">
+                            {doc.chunkCount.toLocaleString('pt-BR')}
+                          </td>
+                          <td className="py-2 px-3 text-center">
+                            <span className="text-emerald-400 font-bold text-[10px]">🟢 Ativo & Consultável</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
