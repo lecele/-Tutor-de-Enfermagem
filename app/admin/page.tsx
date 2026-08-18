@@ -59,6 +59,7 @@ interface StatsData {
     secondAttemptResolved: number;
   };
   timeline: Array<{ date: string; count: number }>;
+  ragDocuments?: Array<{ source: string; chunkCount: number; category?: string }>;
   sessions: SessionData[];
   timestamp: string;
 }
